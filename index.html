@@ -252,6 +252,8 @@ h1{font:500 clamp(28px,3.4vw,40px)/1.1 var(--display);letter-spacing:-.01em;marg
 /* presentation mode */
 .top-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px}
 html.st-open,html.st-open body{overflow:hidden}
+[hidden]{display:none!important}
+.story[hidden]{display:none!important}
 .story{position:fixed;inset:0;z-index:50;background:var(--bg);display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;
   padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 .st-bar,.st-nav{display:flex;align-items:center;gap:12px;padding-block:12px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));background:var(--panel);border-bottom:1px solid var(--rule)}
