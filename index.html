@@ -249,6 +249,79 @@ h1{font:500 clamp(28px,3.4vw,40px)/1.1 var(--display);letter-spacing:-.01em;marg
 .danger{font:500 13px/1 var(--sans);padding:10px 12px;border-radius:8px;border:1px solid var(--rule-2);background:var(--panel);color:var(--bad);cursor:pointer}
 .b-preview{border:1px solid var(--rule);border-radius:10px;overflow:hidden;min-width:0;position:sticky;top:16px;background:var(--panel)}
 
+/* presentation mode */
+.top-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px}
+html.st-open,html.st-open body{overflow:hidden}
+.story{position:fixed;inset:0;z-index:50;background:var(--bg);display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.st-bar,.st-nav{display:flex;align-items:center;gap:12px;padding-block:12px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));background:var(--panel);border-bottom:1px solid var(--rule)}
+.st-nav{border-bottom:0;border-top:1px solid var(--rule);justify-content:space-between}
+.st-tabs{display:flex;gap:6px;overflow-x:auto;flex:1;min-width:0;justify-content:center;scrollbar-width:none}
+.st-tab{flex:none;font:500 13px/1 var(--sans);padding:8px 11px;border-radius:999px;border:1px solid transparent;background:none;color:var(--ink-2);cursor:pointer}
+.st-tab:hover{color:var(--accent)}
+.st-tab[aria-selected="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.st-exit,.st-btn{font:600 14px/1 var(--sans);padding:11px 16px;border-radius:8px;border:1px solid var(--rule-2);background:var(--panel);cursor:pointer}
+.st-btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.st-btn:disabled{opacity:.4;cursor:default}
+.st-count{margin:0;font:400 12.5px/1.3 var(--mono);color:var(--ink-3);text-align:center}
+.st-stage{overflow-y:auto;padding-block:28px 36px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+.story>*{min-width:0}
+.slide{max-width:1040px;min-width:0;margin:0 auto;display:grid;gap:22px;animation:slidein .35s ease-out}
+@keyframes slidein{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+.stages{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.stg{display:grid;gap:6px;font:600 10.5px/1.2 var(--sans);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3)}
+.stg::before{content:"";height:4px;border-radius:99px;background:var(--rule)}
+.stg.done{color:var(--ink-2)}.stg.done::before{background:var(--accent);opacity:.45}
+.stg.now{color:var(--accent)}.stg.now::before{background:var(--accent)}
+.s-eyebrow{margin:0;font:600 12px/1.3 var(--sans);text-transform:uppercase;letter-spacing:.1em;color:var(--accent)}
+.s-head{margin:0;font:500 clamp(28px,4.2vw,48px)/1.1 var(--display);letter-spacing:-.01em;text-wrap:balance;max-width:22ch}
+.s-text{margin:0;font-size:clamp(16px,1.6vw,19px);line-height:1.55;color:var(--ink-2);max-width:62ch}
+.s-quote{margin:0;padding:26px 30px;border-radius:14px;background:var(--panel);border:1px solid var(--rule);font:400 clamp(22px,3vw,34px)/1.35 var(--display);box-shadow:var(--shadow)}
+.s-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.s-box{position:relative;padding:18px;border-radius:12px;background:var(--panel);border:1px solid var(--rule);display:grid;gap:6px;align-content:start;box-shadow:var(--shadow)}
+.s-box b{font:500 21px/1.2 var(--display)}
+.s-box span{font-size:14px;color:var(--ink-2)}
+.s-box .n{font:500 11px/1 var(--mono);color:var(--accent)}
+.s-box:not(:last-child)::after{content:"→";position:absolute;right:-13px;top:50%;transform:translateY(-50%);color:var(--accent);font-size:18px;z-index:1}
+.s-pills{display:flex;flex-wrap:wrap;gap:8px}
+.s-pill{padding:10px 14px;border-radius:999px;border:1px solid var(--rule);background:var(--panel);font-size:15px;color:var(--ink-3)}
+.s-pill.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+.s-group{display:grid;gap:8px}
+.s-cap{margin:0;font:600 11px/1.3 var(--sans);text-transform:uppercase;letter-spacing:.09em;color:var(--ink-3)}
+.s-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0;padding:0;list-style:none}
+.s-item{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:14px 16px;border-radius:10px;background:var(--panel);border:1px solid var(--rule)}
+.s-item .ab{grid-row:span 2;width:30px;height:30px;font-size:11px}
+.s-item b{font-size:15px}
+.s-item span{font-size:14px;color:var(--ink-2)}
+.s-item.off{background:none;border-style:dashed}
+.s-item.off b,.s-item.off span{color:var(--ink-3)}
+.s-item.flag{border-color:var(--bad)}
+.s-item .tag-ok,.s-item .tag-bad{justify-self:start;margin-top:4px;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px}
+.tag-ok{color:var(--ok);background:var(--ok-soft)}.tag-bad{color:var(--bad);background:var(--bad-soft)}
+.s-opts{display:grid;gap:10px}
+.s-opt{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;padding:14px 16px;border-radius:10px;background:var(--panel);border:1px solid var(--rule)}
+.s-opt.rec{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.s-opt b{font-size:16px}
+.s-opt .c{font:500 17px/1.2 var(--mono);text-align:right}
+.s-opt .meter{grid-column:1/-1;height:8px;border-radius:99px;background:var(--sunk);overflow:hidden}
+.s-opt .meter i{display:block;height:100%;background:var(--rule-2)}
+.s-opt.rec .meter i{background:var(--accent)}
+.s-opt .why-line{grid-column:1/-1;font-size:14px;color:var(--ink-2)}
+.s-opt .why-line.bad{color:var(--bad)}
+.s-answer{padding:26px 30px;border-radius:14px;background:var(--panel);border:1px solid var(--accent);display:grid;gap:14px;box-shadow:var(--shadow)}
+.s-answer .headline{font-size:clamp(22px,2.6vw,30px)}
+.s-answer ul,.s-answer ol{margin:0;padding-left:22px;display:grid;gap:8px;font-size:16px;line-height:1.5}
+.s-ctas{display:flex;flex-wrap:wrap;gap:10px}
+@media (max-width:760px){
+  .stages{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .stg{font-size:0;gap:0}
+  .s-flow,.s-list{grid-template-columns:minmax(0,1fr)}
+  .s-box:not(:last-child)::after{content:"↓";right:auto;left:50%;top:auto;bottom:-15px;transform:translateX(-50%)}
+  .st-bar .brand{display:none}
+  .st-tabs{justify-content:flex-start}
+  .s-quote,.s-answer{padding:20px}
+}
+
 /* responsive */
 @media (max-width:1180px){.route{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:980px){
@@ -282,7 +355,8 @@ h1{font:500 clamp(28px,3.4vw,40px)/1.1 var(--display);letter-spacing:-.01em;marg
 </style>
 <div class="wrap">
   <header class="top">
-    <div class="brand"><span class="mark" aria-hidden="true"></span>Coach<span class="brand-sub">Skills framework demo</span></div>
+    <div class="top-row"><div class="brand"><span class="mark" aria-hidden="true"></span>Coach<span class="brand-sub">Skills framework demo</span></div>
+      <button type="button" class="run" id="present"><span aria-hidden="true">▶</span> Presentation mode</button></div>
     <h1>How the coach turns an advisor's question into an answer</h1>
     <p class="lede">Funding &amp; Liquidity is one super skill. Inside it, playbooks such as Buy a home and Buy a boat call shared building blocks, and the building blocks ask our agents for facts. Run a question to see which parts load, what each agent returns, and the answer the skill's rules produce.</p>
   </header>
@@ -330,6 +404,20 @@ h1{font:500 clamp(28px,3.4vw,40px)/1.1 var(--display);letter-spacing:-.01em;marg
       <div class="b-preview"><div class="file-top"><span class="ftype">SKILL.md preview</span><code class="path" id="b-path"></code></div><div class="file-body" id="b-prev"></div></div>
     </div>
   </section>
+
+  <div class="story" id="story" hidden role="dialog" aria-modal="true" aria-label="Presentation mode">
+    <div class="st-bar">
+      <div class="brand"><span class="mark" aria-hidden="true"></span>Coach<span class="brand-sub">Presentation</span></div>
+      <div class="st-tabs" id="st-tabs" role="tablist" aria-label="Chapters"></div>
+      <button type="button" class="st-exit" id="st-exit">Exit</button>
+    </div>
+    <div class="st-stage" id="st-stage" aria-live="polite"></div>
+    <div class="st-nav">
+      <button type="button" class="st-btn" id="st-prev">← Back</button>
+      <p class="st-count" id="st-count"></p>
+      <button type="button" class="st-btn primary" id="st-next">Next →</button>
+    </div>
+  </div>
 
   <p class="foot">Built to show the pattern, not to give advice. The household is made up, rates marked * are placeholders rather than quotes, and tax uses federal rates only (23.8% on long-term gains, 40.8% short-term). In production each agent call would hit the live system. The coach only answers the advisor; it never moves money.</p>
 </div>
@@ -1192,4 +1280,148 @@ $('#b-form').addEventListener('click', e => {
 });
 $('#to-builder').addEventListener('click', () => openBuilder(CUSTOM[0] ? CUSTOM[0].id : null, true));
 openBuilder(CUSTOM[0] ? CUSTOM[0].id : null);
+/* ---------- Presentation mode: each example told one step at a time ---------- */
+const STORY_EX = [
+  {id: 'home', tab: 'Buy a home'}, {id: 'boat', tab: 'Buy a boat'}, {id: 'raise', tab: 'Raise cash'},
+  {id: 'tax', tab: 'Pay a tax bill'}, {id: 'lux', tab: '$10M home (expert)'}
+];
+const STAGES = ['Question', 'Skill', 'Plan', 'Facts', 'Rules', 'Answer'];
+const KINDS = ['ask', 'route', 'plan', 'facts', 'decide', 'answer'];
+const story = {slides: [], i: 0};
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+function buildStory() {
+  const slides = [{kind: 'intro', chapter: 'Intro'}];
+  STORY_EX.forEach((ex, n) => {
+    const p = PRESETS.find(x => x.id === ex.id); if (!p) return;
+    const run = buildRun(p.q);
+    KINDS.forEach((k, j) => slides.push({kind: k, step: j, chapter: ex.tab, n: n + 1, total: STORY_EX.length, q: p.q, run}));
+  });
+  slides.push({kind: 'outro', chapter: 'Add a skill'});
+  return slides;
+}
+
+function slideBody(s) {
+  if (s.kind === 'intro') return `
+    <p class="s-eyebrow">How the coach works</p>
+    <h2 class="s-head">One question, the right skill, the right agents</h2>
+    <p class="s-text">A skill is a playbook written by one of our experts. It says when it applies, what to check, which agents to ask, and how to decide. The coach follows it and hands the advisor an answer they can use with the client.</p>
+    <div class="s-flow">
+      <div class="s-box"><span class="n">1</span><b>Advisor's question</b><span>Typed the way they'd say it: “How should my client fund a $2.4M house?”</span></div>
+      <div class="s-box"><span class="n">2</span><b>Skill</b><span>The coach opens only the playbook that fits. Here, Funding &amp; Liquidity → Buy a home.</span></div>
+      <div class="s-box"><span class="n">3</span><b>Agents</b><span>The skill asks Banking, Investment, Lending, Mortgage, Tax and Planning for the facts it needs.</span></div>
+      <div class="s-box"><span class="n">4</span><b>Answer</b><span>The skill's rules pick an option, and the coach explains why, in plain words.</span></div>
+    </div>
+    <p class="s-text">Next: ${STORY_EX.length} examples, six steps each.</p>`;
+  if (s.kind === 'outro') {
+    const c = CUSTOM[0];
+    return `
+    <p class="s-eyebrow">Adding a skill</p>
+    <h2 class="s-head">Experts add skills without writing code</h2>
+    <p class="s-text">In the skill builder, an expert fills in three things. The coach then sends matching questions to the new skill, ahead of the general playbook.</p>
+    <div class="s-flow" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+      <div class="s-box"><span class="n">When it applies</span><b>${c ? esc(c.name) : 'A new skill'}</b><span>${c ? `Trigger words like “${esc(c.triggers.slice(0, 2).join('”, “'))}”${c.minAmount ? `, and only at ${money(c.minAmount)} or more` : ''}.` : 'Trigger words and an optional minimum amount.'}</span></div>
+      <div class="s-box"><span class="n">What to check first</span><b>${c ? c.checks.length : 'A few'} checks</b><span>${c ? c.checks.slice(0, 3).map(k => METRICS[k.metric] ? esc(METRICS[k.metric].short) : '').join(' · ') : 'Each one names an agent, a number and a limit.'}</span></div>
+      <div class="s-box"><span class="n">What to ask the client</span><b>${c ? c.questions.length : 'A few'} questions</b><span>${c && c.questions[0] ? esc(c.questions[0]) : 'The questions the expert always raises.'}</span></div>
+    </div>
+    <div class="s-ctas"><button type="button" class="st-btn primary" data-go="demo">Explore the full demo</button><button type="button" class="st-btn" data-go="builder">Open the skill builder</button><button type="button" class="st-btn" data-go="start">Start over</button></div>`;
+  }
+  const r = s.run, sk = r.skill, sol = r.sol, e = r.expert, P = r.P;
+  const head = `<div class="stages" aria-hidden="true">${STAGES.map((t, j) => `<span class="stg${j < s.step ? ' done' : j === s.step ? ' now' : ''}">${t}</span>`).join('')}</div>
+    <p class="s-eyebrow">Example ${s.n} of ${s.total} · ${esc(s.chapter)} · Step ${s.step + 1} of 6</p>`;
+  if (!sk) return head + `<h2 class="s-head">No skill matched this example</h2><p class="s-text">The expert skill for this example was deleted in the skill builder.</p>`;
+  switch (s.kind) {
+    case 'ask': return head + `<h2 class="s-head">An advisor asks the coach</h2><blockquote class="s-quote">“${esc(s.q)}”</blockquote>
+      <p class="s-text">No forms or menus. The coach works out what kind of question this is and which numbers matter.</p>`;
+    case 'route': {
+      const others = allPB().filter(p => p.id !== sk.id);
+      return head + `<h2 class="s-head">The coach opens the ${esc(sk.name)} skill</h2>
+      <p class="s-text">It spots ${P.hits.map(h => `“${esc(h)}”`).join(' and ')}${P.amountStated ? ` and ${money(P.amount)}` : ''}, so it opens the Funding &amp; Liquidity skill and, inside it, ${esc(sk.name)}.${e && sk.minAmount ? ` This expert skill only applies at ${money(sk.minAmount)} or more, so it takes over from the general ${esc(r.pb.name)} playbook.` : ''} Everything else stays closed, which keeps the answer focused.</p>
+      <div class="s-group"><p class="s-cap">Playbooks inside Funding &amp; Liquidity</p><div class="s-pills"><span class="s-pill on">✓ ${esc(sk.name)}</span>${others.map(p => `<span class="s-pill">${esc(p.name)}</span>`).join('')}</div></div>
+      <div class="s-group"><p class="s-cap">Other skill families, not opened</p><div class="s-pills">${FAMILIES.filter(f => !f.super).map(f => `<span class="s-pill">${esc(f.name)}</span>`).join('')}</div></div>`;
+    }
+    case 'plan': {
+      if (e) return head + `<h2 class="s-head">The expert's skill says what to check first</h2>
+        <p class="s-text">${esc(sk.author || 'An expert')} wrote these checks. Each one asks one agent for one number and flags it past a limit. After that, the usual ${esc(r.pb.name)} steps run.</p>
+        <ul class="s-list">${e.rows.map(x => `<li class="s-item"><span class="ab">${AG[x.m.agent].mono}</span><b>${esc(x.m.short)}</b><span>${esc(AG[x.m.agent].name)} · ${esc(cap(x.rule))}</span></li>`).join('')}</ul>`;
+      const used = r.pb.uses, skipped = BLOCKS.filter(b => !used.includes(b.id));
+      return head + `<h2 class="s-head">The skill lists ${used.length} things to work out</h2>
+        <p class="s-text">These are shared steps that any playbook can reuse. ${esc(sk.name)} only needs ${used.length} of them${skipped.length ? `, so ${skipped.map(b => b.name.toLowerCase()).join(' and ')} never runs` : ''}.</p>
+        <ul class="s-list">${used.map(id => `<li class="s-item"><span class="ab">${used.indexOf(id) + 1}</span><b>${esc(BL[id].name)}</b><span>${esc(BL[id].desc)}</span></li>`).join('')}${skipped.map(b => `<li class="s-item off"><span class="ab">–</span><b>${esc(b.name)}</b><span>Not needed for this question</span></li>`).join('')}</ul>`;
+    }
+    case 'facts': {
+      const by = {};
+      r.steps.forEach(st => st.calls.forEach(c => { (by[c.a] = by[c.a] || []).push(c); }));
+      const agents = AGENTS.filter(a => by[a.id]);
+      return head + `<h2 class="s-head">Our agents bring back the facts</h2>
+        <p class="s-text">The skill asks ${agents.length} of our ${AGENTS.length} agents. Each one answers from its own system: balances, holdings, loan quotes, tax estimates.</p>
+        <ul class="s-list">${agents.map(a => {
+          const calls = by[a.id], flagged = calls.some(c => /flagged$/.test(c.out));
+          const facts = (e ? calls.filter(c => /→ (OK|flagged)$/.test(c.out)).concat(calls.filter(c => !/→ (OK|flagged)$/.test(c.out))) : calls).slice(0, 2);
+          return `<li class="s-item${flagged ? ' flag' : ''}"><span class="ab">${a.mono}</span><b>${esc(a.name)}</b><span>${facts.map(c => esc(c.out)).join('<br>')}</span></li>`;
+        }).join('')}</ul>`;
+    }
+    case 'decide': {
+      const max = Math.max(1, ...sol.opts.filter(o => o.feasible).map(o => o.cost));
+      return head + `<h2 class="s-head">The skill's rules pick the best option</h2>
+        <p class="s-text">It builds ${sol.opts.length} ways to pay, drops any that break a rule (keep the emergency reserve, keep tax from selling under $50K, keep debt affordable), and picks the cheapest of the rest: tax now plus ${sol.period === 'year one' ? 'a year of' : ''} interest${sol.period === 'year one' ? '' : ' ' + sol.period}.</p>
+        <div class="s-opts">${sol.opts.map(o => `<div class="s-opt${o === sol.rec ? ' rec' : ''}"><b>${o.key}. ${esc(o.name)}${o === sol.rec ? ' <span class="pill sm">Pick</span>' : ''}</b><span class="c">${o.feasible ? money(o.cost) : '—'}</span>
+          <div class="meter"><i style="width:${o.feasible ? Math.max(3, Math.round(o.cost / max * 100)) : 0}%"></i></div>
+          <span class="why-line${o.feasible && !o.fails.length ? '' : ' bad'}">${!o.feasible ? `Not possible: ${esc(o.blocker)}` : o.fails.length ? `Breaks a rule: ${esc(o.fails.map(f => f.why).join('; '))}` : 'Passes every rule'}</span></div>`).join('')}</div>`;
+    }
+    case 'answer': {
+      const rec = sol.rec;
+      const lines = e && e.flagged
+        ? `<p class="flag">${e.flagged} of ${e.rows.length} expert checks are flagged: ${esc(e.rows.filter(x => !x.pass).map(x => x.m.short.toLowerCase()).join(', '))}.</p><p class="s-cap">Questions to raise with the client</p><ol>${sk.questions.map(q => `<li>${esc(q)}</li>`).join('')}</ol>`
+        : `<ul>${(rec ? whyBullets(r) : []).slice(0, 3).map(x => `<li>${esc(x)}</li>`).join('')}</ul>`;
+      return head + `<h2 class="s-head">The coach answers the advisor</h2>
+        <div class="s-answer"><span class="pill" style="justify-self:start">${rec ? `Recommended · option ${rec.key}` : 'No option works'}</span>
+          <p class="headline">${rec ? esc(rec.headline) : 'This is more than the household can fund without touching retirement or private funds.'}</p>${lines}</div>
+        <p class="s-text">The advisor takes this to the client. The full demo shows every number behind it.</p>`;
+    }
+  }
+}
+
+function renderStory() {
+  const s = story.slides[story.i];
+  $('#st-stage').innerHTML = `<div class="slide">${slideBody(s)}</div>`;
+  $('#st-stage').scrollTop = 0;
+  const chapters = [...new Set(story.slides.map(x => x.chapter))];
+  $('#st-tabs').innerHTML = chapters.map(c => `<button type="button" role="tab" class="st-tab" aria-selected="${c === s.chapter}" data-ch="${esc(c)}">${esc(c)}</button>`).join('');
+  const cur = $('#st-tabs [aria-selected="true"]'); if (cur) cur.scrollIntoView({block: 'nearest', inline: 'center'});
+  $('#st-count').textContent = `${story.i + 1} / ${story.slides.length}`;
+  $('#st-prev').disabled = story.i === 0;
+  $('#st-next').disabled = story.i === story.slides.length - 1;
+}
+function go(i) { story.i = Math.max(0, Math.min(story.slides.length - 1, i)); renderStory(); }
+function openStory() {
+  story.slides = buildStory(); story.i = 0;
+  $('#story').hidden = false; document.documentElement.classList.add('st-open');
+  try { if (location.hash !== '#story') history.replaceState(null, '', '#story'); } catch (e) {}
+  renderStory(); $('#st-next').focus();
+}
+function closeStory(then) {
+  $('#story').hidden = true; document.documentElement.classList.remove('st-open');
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+  if (then === 'builder') openBuilder(CUSTOM[0] ? CUSTOM[0].id : null, true); else $('#present').focus();
+}
+
+$('#present').addEventListener('click', openStory);
+$('#st-exit').addEventListener('click', () => closeStory());
+$('#st-prev').addEventListener('click', () => go(story.i - 1));
+$('#st-next').addEventListener('click', () => go(story.i + 1));
+$('#st-tabs').addEventListener('click', e => { const b = e.target.closest('[data-ch]'); if (b) go(story.slides.findIndex(x => x.chapter === b.dataset.ch)); });
+$('#st-stage').addEventListener('click', e => {
+  const b = e.target.closest('[data-go]'); if (!b) return;
+  if (b.dataset.go === 'start') go(0); else closeStory(b.dataset.go);
+});
+document.addEventListener('keydown', e => {
+  if ($('#story').hidden) return;
+  if (e.key === 'ArrowRight' || e.key === 'PageDown' || (e.key === ' ' && e.target.tagName !== 'BUTTON')) { e.preventDefault(); go(story.i + 1); }
+  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(story.i - 1); }
+  else if (e.key === 'Escape') closeStory();
+});
+const storyFromHash = () => { if (location.hash === '#story' && $('#story').hidden) openStory(); };
+window.addEventListener('hashchange', storyFromHash);
+storyFromHash();
 </script>

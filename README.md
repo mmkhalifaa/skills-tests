@@ -12,6 +12,10 @@ An advisor asks something like "My client wants to buy a $2.4M house. How should
 
 The page also includes a **skill builder**. An expert sets when a skill applies, the checks to run first (agent, metric, limit, what to do if flagged) and the questions to raise with the client. It previews the skill as a `SKILL.md` and the coach routes matching questions to it. Saved skills are kept in the viewer's browser.
 
+## Presentation mode
+
+Select **Presentation mode** at the top of the page, or open the page with `#story` at the end of its address, for a simpler walkthrough to share. It covers each example (buy a home, buy a boat, raise cash, pay a tax bill, a $10M home with an expert skill) in six plain steps: the question, the skill it opens, what it checks, what the agents found, how the rules decide, and the answer. Use the arrow keys or the Back and Next buttons.
+
 ## Run it
 
 Everything lives in one file, `index.html`: markup, styles, data, logic and the skill builder. Open it in a browser; there is nothing to install or build.
