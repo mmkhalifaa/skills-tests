@@ -1,0 +1,1195 @@
+<title>Coach Skill Router</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap">
+<style>
+/* Layout: one working canvas. Question bar on top; route map beside the skill file it opens; coach answer beside the run log.
+   Palette: check-paper neutrals, one stamp-ink blue for everything that ran. */
+:root{
+  --bg:#E8EDE8; --panel:#FAFBF9; --sunk:#F0F3EF; --ink:#16201A; --ink-2:#4B5750; --ink-3:#717D76;
+  --rule:#D2DAD3; --rule-2:#B7C2BA; --accent:#2440B3; --accent-ink:#FFFFFF; --accent-soft:#E1E6F6;
+  --ok:#1B7343; --ok-soft:#DCEEE2; --bad:#B0281F; --bad-soft:#F7E2DF; --warn:#7A4F00; --warn-soft:#F4E8CC;
+  --shadow:0 1px 0 rgba(22,32,26,.04),0 10px 24px -18px rgba(22,32,26,.35);
+  --display:"Newsreader","Iowan Old Style",Georgia,serif;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1411; --panel:#161C18; --sunk:#1C241F; --ink:#E4EAE5; --ink-2:#A6B2AA; --ink-3:#808D85;
+  --rule:#29332D; --rule-2:#3D4A42; --accent:#97A8FF; --accent-ink:#0F1411; --accent-soft:#1E2544;
+  --ok:#72D49E; --ok-soft:#133020; --bad:#FF948A; --bad-soft:#3B1916; --warn:#F0BA62; --warn-soft:#33260E;
+  --shadow:0 1px 0 rgba(0,0,0,.35),0 12px 26px -18px rgba(0,0,0,.8); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1411; --panel:#161C18; --sunk:#1C241F; --ink:#E4EAE5; --ink-2:#A6B2AA; --ink-3:#808D85;
+  --rule:#29332D; --rule-2:#3D4A42; --accent:#97A8FF; --accent-ink:#0F1411; --accent-soft:#1E2544;
+  --ok:#72D49E; --ok-soft:#133020; --bad:#FF948A; --bad-soft:#3B1916; --warn:#F0BA62; --warn-soft:#33260E;
+  --shadow:0 1px 0 rgba(0,0,0,.35),0 12px 26px -18px rgba(0,0,0,.8); color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 14px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+code,kbd,pre{font-family:var(--mono)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1280px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px;display:flex;flex-direction:column;gap:16px}
+
+/* header */
+.top{display:grid;gap:10px;padding-block:0 6px}
+.brand{display:flex;align-items:center;gap:10px;font:600 14px/1 var(--sans)}
+.mark{width:18px;height:18px;border-radius:5px;background:var(--accent);display:grid;place-items:center}
+.mark::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent-ink)}
+.brand-sub{color:var(--ink-3);font:500 11px/1 var(--sans);text-transform:uppercase;letter-spacing:.1em;padding-left:10px;border-left:1px solid var(--rule-2)}
+h1{font:500 clamp(28px,3.4vw,40px)/1.1 var(--display);letter-spacing:-.01em;margin:4px 0 0;text-wrap:balance;max-width:26ch}
+.lede{margin:0;max-width:74ch;color:var(--ink-2);font-size:15px}
+
+/* shared */
+.card{background:var(--panel);border:1px solid var(--rule);border-radius:12px;box-shadow:var(--shadow);min-width:0}
+.label{margin:0;font:600 11px/1.3 var(--sans);text-transform:uppercase;letter-spacing:.09em;color:var(--ink-3)}
+.ab{width:22px;height:22px;flex:none;border-radius:5px;display:inline-grid;place-items:center;font:500 10px/1 var(--mono);background:var(--panel);border:1px solid var(--rule-2);color:var(--ink-2)}
+.pill{display:inline-flex;align-items:center;padding:4px 9px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font:600 11px/1 var(--sans);letter-spacing:.06em;text-transform:uppercase}
+.pill.sm{padding:3px 7px;font-size:10px;margin-left:8px;vertical-align:2px}
+
+/* ask */
+.ask{display:grid;grid-template-columns:minmax(0,1fr) 330px}
+.ask-main{padding:18px 20px;display:grid;gap:12px;min-width:0;margin:0}
+#q{width:100%;resize:vertical;min-height:72px;font:400 19px/1.4 var(--display);color:var(--ink);background:var(--sunk);border:1px solid var(--rule);border-radius:8px;padding:12px 14px}
+#q:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.ask-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.presets{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:500 13px/1 var(--sans);padding:9px 12px;border-radius:999px;border:1px solid var(--rule-2);background:var(--panel);cursor:pointer;transition:border-color .15s,color .15s}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.run{font:600 14px/1 var(--sans);padding:11px 16px;border-radius:8px;border:0;background:var(--accent);color:var(--accent-ink);cursor:pointer;display:inline-flex;gap:10px;align-items:center}
+.run:hover{filter:brightness(1.08)}
+.run kbd{font:500 11px/1 var(--mono);opacity:.75}
+.parsed{display:flex;flex-wrap:wrap;gap:6px;min-height:28px}
+.tag{display:inline-flex;gap:6px;align-items:baseline;padding:5px 8px;border-radius:6px;background:var(--sunk);border:1px solid var(--rule);font-size:13px;min-width:0;overflow-wrap:anywhere}
+.tag i{font:600 10px/1.2 var(--sans);font-style:normal;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3)}
+.tag b{font-weight:500}
+.hint{margin:0;font-size:12.5px;color:var(--ink-3)}
+.hh{border-left:1px solid var(--rule);padding:18px 20px;display:grid;gap:10px;align-content:start;background:var(--sunk);border-radius:0 12px 12px 0;min-width:0}
+.hh-name{margin:0;font:500 21px/1.2 var(--display)}
+.hh dl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;margin:0;font-size:13px}
+.hh dt{color:var(--ink-2)}
+.hh dd{margin:0;text-align:right;font:500 12.5px/1.55 var(--mono);font-variant-numeric:tabular-nums}
+.hh summary{cursor:pointer;font-size:12.5px;color:var(--ink-2)}
+.lots{width:100%;border-collapse:collapse;margin-top:6px;font-size:12px}
+.lots td{padding:3px 0;border-top:1px solid var(--rule)}
+.lots td+td{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;padding-left:8px;white-space:nowrap}
+.lots .neg{color:var(--ok)}
+.fine{margin:0;font-size:12px;color:var(--ink-3)}
+
+/* route map */
+.route{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;align-items:start}
+.map-card{padding:16px 18px 14px;display:grid;gap:12px}
+.card-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 14px}
+.loaded{margin:0;font:400 12px/1.4 var(--mono);color:var(--ink-3)}
+.loaded b{color:var(--accent);font-weight:500}
+.map{position:relative;padding-top:10px}
+.edges{position:absolute;left:0;top:0;z-index:1;pointer-events:none;overflow:visible}
+.edges path{fill:none;stroke:var(--rule-2);stroke-width:1}
+.edges path.on{stroke:var(--accent);stroke-width:2.5;stroke-linecap:round}
+.tiers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));column-gap:30px;row-gap:24px}
+.tier{position:relative;z-index:2;display:flex;flex-direction:column;gap:8px;min-width:0;grid-row:1}
+.tier[data-tier="f"]{grid-column:1}.tier[data-tier="p"]{grid-column:2}.tier[data-tier="b"]{grid-column:3}.tier[data-tier="a"]{grid-column:4}
+.tier-head{display:grid;gap:2px;min-height:54px;align-content:start}
+.tier-head .label{color:var(--ink-2)}
+.tier-head span{font-size:12px;line-height:1.35;color:var(--ink-3)}
+.tier-nodes{display:flex;flex-direction:column;justify-content:center;gap:8px;flex:1}
+.scope{position:relative;z-index:0;grid-column:2/4;grid-row:1;margin:-12px -14px -10px;border:1.5px dashed var(--rule-2);border-radius:14px;transition:border-color .3s}
+.scope span{position:absolute;top:-9px;left:12px;padding:0 6px;background:var(--panel);font:500 11px/16px var(--mono);color:var(--ink-3)}
+.scope.on{border-color:var(--accent)}
+.scope.on span{color:var(--accent)}
+.node{position:relative;display:grid;gap:1px;width:100%;text-align:left;padding:8px 10px;border-radius:8px;border:1px solid var(--rule);background:var(--panel);cursor:pointer;transition:border-color .25s,background-color .25s,color .25s}
+.node:hover{border-color:var(--rule-2)}
+.node .nm{font:600 13px/1.25 var(--sans)}
+.node .id{font:400 11px/1.3 var(--mono);color:var(--ink-3);overflow-wrap:anywhere}
+.node .kind{font:600 10px/1.2 var(--sans);text-transform:uppercase;letter-spacing:.09em;color:var(--ink-3)}
+.node.agent{grid-template-columns:auto minmax(0,1fr);column-gap:9px;align-items:center}
+.node.agent .mono{grid-row:span 2;width:28px;height:28px;border-radius:6px;display:grid;place-items:center;font:500 11px/1 var(--mono);background:var(--sunk);border:1px solid var(--rule-2);color:var(--ink-2);transition:inherit}
+.node.dim{color:var(--ink-3)}
+.node.dim .nm{font-weight:500}
+.node.dim .id{color:var(--rule-2)}
+.node.on{border-color:var(--accent);background:var(--accent-soft)}
+.node.on .id,.node.on .kind{color:var(--accent)}
+.node.on .mono{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.node.sel{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--accent)}
+.node.now{animation:ping .6s ease-out}
+@keyframes ping{0%{transform:scale(1.04)}100%{transform:none}}
+.node .step{position:absolute;top:-8px;right:-7px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font:500 10.5px/20px var(--mono);text-align:center}
+.map-hint{margin:0;font-size:12.5px;color:var(--ink-3)}
+
+/* skill file */
+.file-card{display:flex;flex-direction:column;overflow:hidden}
+.file-top{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--rule);background:var(--sunk)}
+.ftype{flex:none;font:600 10px/1 var(--sans);text-transform:uppercase;letter-spacing:.09em;padding:4px 7px;border-radius:4px;border:1px solid var(--rule-2);color:var(--ink-2)}
+.path{font:500 12px/1.35 var(--mono);color:var(--ink-2);overflow-wrap:anywhere;min-width:0}
+.file-body{padding:14px 16px 18px;display:grid;gap:12px;min-width:0}
+.fm{margin:0;padding:10px 12px;border-radius:8px;background:var(--sunk);border:1px solid var(--rule);font:400 12px/1.6 var(--mono);color:var(--ink-2);white-space:pre-wrap;overflow-wrap:anywhere}
+.fm .k{color:var(--accent)}
+.fm .d{color:var(--ink-3)}
+.md{display:grid;gap:6px;font-size:13.5px;line-height:1.5;max-width:76ch}
+.md h3{margin:6px 0 0;font:500 12.5px/1.3 var(--mono)}
+.md h3::before{content:"## ";color:var(--accent)}
+.md ol,.md ul{margin:0;padding-left:20px;display:grid;gap:3px}
+.md p{margin:0}
+.md code{font-size:12px}
+.agent-does{margin:0;font:500 17px/1.35 var(--display)}
+.inrun{display:grid;gap:8px;border:1px dashed var(--accent);border-radius:8px;padding:10px 12px;background:var(--accent-soft);font-size:13px}
+.inrun h4{margin:0;font:600 11px/1.2 var(--sans);text-transform:uppercase;letter-spacing:.09em;color:var(--accent)}
+.inrun p{margin:0}
+.inrun.off{border-color:var(--rule-2);background:var(--sunk);color:var(--ink-2)}
+.inrun.off h4{color:var(--ink-3)}
+
+/* answer */
+.result{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:start}
+.answer-card,.trace-card{padding:18px 20px 20px;display:grid;gap:14px}
+#answer{display:grid;gap:16px;min-width:0}
+.rec-line{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.rec-name{font-weight:600}
+.headline{margin:0;font:500 clamp(20px,2.1vw,25px)/1.28 var(--display);text-wrap:pretty}
+.note{margin:0;padding:8px 10px;border:1px dashed var(--rule-2);border-radius:8px;font-size:13px;color:var(--ink-2)}
+.flag{margin:0;padding:10px 12px;border-radius:8px;background:var(--warn-soft);color:var(--warn);font-size:13px}
+.figs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.fig{background:var(--panel);padding:10px 12px;display:grid;gap:3px;align-content:start;min-width:0}
+.fig .k{font:600 10.5px/1.2 var(--sans);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3)}
+.fig .v{font:500 18px/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.fig .s{font-size:12px;color:var(--ink-2);overflow-wrap:anywhere}
+.blk{display:grid;gap:8px}
+.why{margin:0;padding-left:18px;display:grid;gap:6px}
+.opts{display:grid;gap:8px}
+.opt{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:6px 12px;padding:11px 12px;border:1px solid var(--rule);border-radius:8px;align-items:start}
+.opt.is-rec{border-color:var(--accent);background:var(--accent-soft)}
+.opt .key{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;font:600 12px/1 var(--mono);background:var(--sunk);border:1px solid var(--rule-2)}
+.opt.is-rec .key{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.opt .nm{font-weight:600}
+.opt .bl{font-size:12.5px;color:var(--ink-2)}
+.opt .cost{text-align:right;font:500 15px/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.opt .cost small{display:block;font:400 11px/1.4 var(--sans);color:var(--ink-3)}
+.opt .meta,.opt .checks{grid-column:2/-1;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--ink-2)}
+.opt .meta b{font:500 12.5px/1.4 var(--mono);color:var(--ink)}
+.opt .checks{gap:5px}
+.ck{font-size:11.5px;line-height:1.3;padding:2px 7px;border-radius:999px}
+.ck.pass{color:var(--ok);background:var(--ok-soft)}
+.ck.fail{color:var(--bad);background:var(--bad-soft);font-weight:600}
+.opt.is-out .nm,.opt.is-out .bl{color:var(--ink-3)}
+.out-t{color:var(--bad)}
+.next{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.next li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--rule);border-radius:8px;font-size:13px}
+.appr{font:500 11px/1 var(--sans);padding:5px 8px;border-radius:999px;border:1px solid var(--rule-2);color:var(--ink-2);white-space:nowrap}
+.tiers-tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tiers-tbl td{padding:9px 0;border-top:1px solid var(--rule);vertical-align:top}
+.tiers-tbl td:nth-child(2){text-align:right;font:500 14px/1.4 var(--mono);white-space:nowrap;padding-left:12px}
+.tiers-tbl .t{font-weight:600;display:block}
+.tiers-tbl .s{color:var(--ink-2);font-size:12.5px}
+.working{display:grid;gap:10px;padding:22px 0;color:var(--ink-2)}
+.working p{margin:0}
+.bar{height:6px;border-radius:99px;background:var(--sunk);border:1px solid var(--rule);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .35s ease-out}
+.foot-note{margin:0;font-size:12px;color:var(--ink-3)}
+
+/* run log */
+.trace{list-style:none;margin:0;padding:0;display:grid}
+.trace>li{position:relative;display:grid;grid-template-columns:26px minmax(0,1fr);gap:12px;padding-bottom:16px}
+.trace>li:not(:last-child)::after{content:"";position:absolute;left:12px;top:26px;bottom:2px;width:2px;background:var(--accent);opacity:.35}
+.trace>li.enter{animation:rise .35s ease-out}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.trace .n{position:relative;z-index:1;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:500 11px/1 var(--mono);background:var(--panel);border:2px solid var(--accent);color:var(--accent)}
+.st{display:grid;gap:4px;min-width:0;padding-top:2px}
+.st .sk{font:400 11.5px/1.3 var(--mono);color:var(--accent);overflow-wrap:anywhere}
+.st .t{font-weight:600}
+.calls{display:grid;gap:5px;margin-top:2px}
+.call{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 8px;padding:7px 9px;background:var(--sunk);border:1px solid var(--rule);border-radius:6px;align-items:start}
+.call .ab{grid-row:span 2}
+.call code{font-size:11.5px;line-height:1.45;color:var(--ink);overflow-wrap:anywhere}
+.call .out{font-size:12.5px;color:var(--ink-2)}
+.call .out::before{content:"→ ";font-family:var(--mono);color:var(--accent)}
+.st .res{margin:2px 0 0;font-size:13px}
+.lines{margin:2px 0 0;padding-left:16px;font-size:12.5px;color:var(--ink-2);display:grid;gap:2px}
+.foot{font-size:12px;color:var(--ink-3);max-width:96ch;margin:0}
+
+/* expert checks in the answer */
+.map-foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
+.xchecks{display:grid;gap:6px}
+.xc{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:start;padding:8px 10px;border:1px solid var(--rule);border-radius:8px}
+.xl{font-weight:600;font-size:13px}
+.xs{font-size:12.5px;color:var(--ink-2)}
+.xc .ck{white-space:nowrap}
+
+/* skill builder */
+.builder{padding:18px 20px 20px;display:grid;gap:16px;scroll-margin-top:16px}
+.b-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px 24px}
+.b-title{margin:6px 0 0;font:500 clamp(20px,2.2vw,26px)/1.2 var(--display);text-wrap:balance}
+.b-sub{margin:6px 0 0;max-width:70ch;color:var(--ink-2)}
+.b-list{display:flex;flex-wrap:wrap;gap:8px}
+.b-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}
+.b-form{display:grid;gap:12px;margin:0;min-width:0}
+.f-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fld{display:grid;gap:4px;min-width:0}
+.fld>span{font:600 11px/1.3 var(--sans);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3)}
+.b-form input,.b-form select,.b-form textarea{width:100%;min-width:0;font:400 14px/1.4 var(--sans);color:var(--ink);background:var(--sunk);border:1px solid var(--rule);border-radius:7px;padding:8px 10px}
+.b-form textarea{resize:vertical}
+.b-form input:focus,.b-form select:focus,.b-form textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.fs{margin:0;padding:10px 12px 12px;border:1px solid var(--rule);border-radius:10px;display:grid;gap:8px;min-width:0}
+.fs legend{padding:0 6px;font:600 11px/1.3 var(--sans);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-2)}
+.fs-note{margin:0;font-size:12.5px;color:var(--ink-3)}
+.ck-row{display:grid;grid-template-columns:minmax(0,1.1fr) 214px minmax(0,1fr) 32px;gap:6px;align-items:center}
+.thr{display:grid;grid-template-columns:auto minmax(80px,1fr) auto;align-items:center;gap:5px;font-size:12px;color:var(--ink-2)}
+.thr em{font-style:normal;color:var(--ink-3)}
+.q-row{display:grid;grid-template-columns:20px minmax(0,1fr) 32px;gap:6px;align-items:center}
+.qn{font:500 12px/1 var(--mono);color:var(--ink-3);text-align:center}
+.x{width:32px;height:34px;border-radius:7px;border:1px solid var(--rule);background:var(--panel);color:var(--ink-3);cursor:pointer;font-size:16px;line-height:1}
+.x:hover{color:var(--bad);border-color:var(--bad)}
+.add{justify-self:start;font:500 13px/1 var(--sans);padding:8px 10px;border-radius:7px;border:1px dashed var(--rule-2);background:none;color:var(--accent);cursor:pointer}
+.add:hover{border-color:var(--accent)}
+.b-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.b-msg{margin:0;font-size:13px;color:var(--ink-2)}
+.b-msg.err{color:var(--bad)}
+.b-msg.ok{color:var(--ok)}
+.danger{font:500 13px/1 var(--sans);padding:10px 12px;border-radius:8px;border:1px solid var(--rule-2);background:var(--panel);color:var(--bad);cursor:pointer}
+.b-preview{border:1px solid var(--rule);border-radius:10px;overflow:hidden;min-width:0;position:sticky;top:16px;background:var(--panel)}
+
+/* responsive */
+@media (max-width:1180px){.route{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:980px){
+  .ask,.result{grid-template-columns:minmax(0,1fr)}
+  .hh{border-left:0;border-top:1px solid var(--rule);border-radius:0 0 12px 12px}
+  .b-grid{grid-template-columns:minmax(0,1fr)}
+  .b-preview{position:static}
+}
+@media (max-width:760px){
+  .f-row{grid-template-columns:minmax(0,1fr)}
+  .ck-row{grid-template-columns:minmax(0,1fr) 32px;padding-bottom:8px;border-bottom:1px solid var(--rule)}
+  .ck-row .x{grid-column:2;grid-row:1}
+  .ck-row .thr,.ck-row .fl{grid-column:1}
+  .builder{padding-inline:16px}
+}
+@media (max-width:760px){
+  .tiers{grid-template-columns:minmax(0,1fr);row-gap:30px}
+  .tier[data-tier]{grid-column:1}
+  .tier[data-tier="f"]{grid-row:1}.tier[data-tier="p"]{grid-row:2}.tier[data-tier="b"]{grid-row:3}.tier[data-tier="a"]{grid-row:4}
+  .scope{grid-column:1;grid-row:2/4;margin:-14px -10px -12px}
+  .tier-head{min-height:0}
+  .tier-nodes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .edges{display:none}
+  .figs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ask-main,.hh,.answer-card,.trace-card{padding-inline:16px}
+  .map-card{padding-inline:14px}
+  #q{font-size:17px}
+}
+@media (hover:none){.run kbd{display:none}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span class="mark" aria-hidden="true"></span>Coach<span class="brand-sub">Skills framework demo</span></div>
+    <h1>How the coach turns an advisor's question into an answer</h1>
+    <p class="lede">Funding &amp; Liquidity is one super skill. Inside it, playbooks such as Buy a home and Buy a boat call shared building blocks, and the building blocks ask our agents for facts. Run a question to see which parts load, what each agent returns, and the answer the skill's rules produce.</p>
+  </header>
+
+  <section class="card ask" aria-labelledby="ask-label">
+    <form class="ask-main" id="ask-form">
+      <label class="label" id="ask-label" for="q">Advisor asks</label>
+      <textarea id="q" rows="2" spellcheck="false"></textarea>
+      <div class="ask-row">
+        <div class="presets" id="presets" role="group" aria-label="Example questions"></div>
+        <button type="submit" class="run" id="run">Run question <kbd id="kbd">Ctrl ↵</kbd></button>
+      </div>
+      <div class="parsed" id="parsed" aria-live="polite"></div>
+      <p class="hint">Edit the question and run it again. Try a $2.8M house, a $2M yacht, or delete “in about 4 months” from the raise-cash question.</p>
+    </form>
+    <aside class="hh" id="hh" aria-label="Sample household"></aside>
+  </section>
+
+  <section class="route">
+    <div class="card map-card">
+      <div class="card-head"><h2 class="label">Skills the coach loads</h2><p class="loaded" id="loaded"></p></div>
+      <div class="map" id="map">
+        <svg class="edges" id="edges" aria-hidden="true"></svg>
+        <div class="tiers" id="tiers"></div>
+      </div>
+      <div class="map-foot"><p class="map-hint">Select any box to open its skill file or agent card.</p><button type="button" class="add" id="to-builder">+ Create a skill</button></div>
+    </div>
+    <article class="card file-card" id="file" aria-live="polite"></article>
+  </section>
+
+  <section class="result">
+    <div class="card answer-card"><h2 class="label">Coach answer</h2><div id="answer"></div></div>
+    <div class="card trace-card"><h2 class="label">Run log</h2><ol class="trace" id="trace"></ol></div>
+  </section>
+
+  <section class="card builder" id="builder" aria-labelledby="b-h">
+    <div class="b-head">
+      <div><h2 class="label" id="b-h">Skill builder</h2>
+        <p class="b-title">Write a skill the way an expert would brief a new advisor</p>
+        <p class="b-sub">Say when it applies, what to check first with which agent, where the line is, and what to ask the client. Save it and the coach starts routing matching questions to it.</p></div>
+      <div class="b-list" id="b-list" role="group" aria-label="Expert skills"></div>
+    </div>
+    <div class="b-grid">
+      <form class="b-form" id="b-form" novalidate></form>
+      <div class="b-preview"><div class="file-top"><span class="ftype">SKILL.md preview</span><code class="path" id="b-path"></code></div><div class="file-body" id="b-prev"></div></div>
+    </div>
+  </section>
+
+  <p class="foot">Built to show the pattern, not to give advice. The household is made up, rates marked * are placeholders rather than quotes, and tax uses federal rates only (23.8% on long-term gains, 40.8% short-term). In production each agent call would hit the live system. The coach only answers the advisor; it never moves money.</p>
+</div>
+<script>
+/* ---------- Sample data (made up for the demo) ---------- */
+const HH = {
+  id: 'HH-20417', name: 'The Whitfields',
+  income: 650000, monthlySpend: 20000, reserveMonths: 6,
+  cash: [{label: 'Checking & savings', value: 185000}, {label: 'Money market fund', value: 240000}],
+  setAside: [{label: 'Q4 estimated tax, due Jan 15', value: 62000}],
+  lots: [
+    {id: 'intl',   label: 'Intl. equity fund', value: 150000,  basis: 172000,  term: 'long',  advance: .70},
+    {id: 'etf',    label: 'US index ETFs',     value: 2000000, basis: 1378000, term: 'long',  advance: .70},
+    {id: 'stocks', label: 'Single stocks',     value: 850000,  basis: 380000,  term: 'long',  advance: .50},
+    {id: 'recent', label: 'Bought this year',  value: 200000,  basis: 170000,  term: 'short', advance: .50}
+  ],
+  restricted: [
+    {label: 'IRA & 401(k)', value: 1450000, why: 'income tax plus a 10% penalty before 59½'},
+    {label: 'Private funds', value: 600000, why: 'locked up until 2029'}
+  ]
+};
+/* Placeholder rates and the guardrail limits the super skill enforces */
+const RATES = {ltcg: .238, stcg: .408, mortgage: .064, line: .069, marine: .075, irs: .12, closing: .025, carry: .015, boatFees: .06};
+const LIMITS = {tax: 50000, line: .5, housing: .28, debt: .36};
+
+const AGENTS = [
+  {id: 'banking', name: 'Banking Agent', mono: 'BK', short: 'balances, accounts', does: 'Accounts, balances and how payments get made.',
+   tools: ['get_balances(household)', 'get_payment_account()']},
+  {id: 'investment', name: 'Investment Agent', mono: 'IN', short: 'holdings, tax lots', does: 'Holdings, tax lots and trade proposals.',
+   tools: ['get_positions(household, pledgeable?)', 'get_tax_lots(household)', 'stage_trades(orders)']},
+  {id: 'lending', name: 'Lending Agent', mono: 'LN', short: 'pledged lines, loans', does: 'Pledged asset lines and asset-backed loans.',
+   tools: ['get_borrowing_capacity(household)', 'quote_pledged_line()', 'quote_marine_loan(amount, years)']},
+  {id: 'mortgage', name: 'Mortgage Agent', mono: 'MG', short: 'home loans', does: 'Home loan quotes and pre-approval.',
+   tools: ['quote_jumbo(price, down)', 'start_preapproval(household, amount)']},
+  {id: 'tax', name: 'Tax Agent', mono: 'TX', short: 'gains, due dates', does: 'Gain estimates, due dates and penalty checks.',
+   tools: ['estimate_gains_tax(sell)', 'get_due_dates(household)', 'check_safe_harbor(year)', 'quote_irs_plan(balance)']},
+  {id: 'planning', name: 'Planning Agent', mono: 'PL', short: 'rules, ratios', does: 'Household rules, set-asides and affordability ratios.',
+   tools: ['get_set_asides(household)', 'check_ratios(options)']}
+];
+
+const FAMILIES = [
+  {id: 'funding-liquidity', name: 'Funding & Liquidity', super: true},
+  {id: 'retirement-income', name: 'Retirement income', inside: 'withdrawal order, Roth conversions, Social Security timing, RMDs'},
+  {id: 'estate-gifting', name: 'Estate & gifting', inside: 'annual exclusion gifts, trust funding, beneficiary reviews'},
+  {id: 'portfolio-review', name: 'Portfolio review', inside: 'drift, rebalancing, concentrated positions, fees'},
+  {id: 'risk-insurance', name: 'Risk & insurance', inside: 'life, disability, umbrella and property coverage'}
+];
+
+const SUPER_FILE = {
+  path: 'skills/funding-liquidity/SKILL.md',
+  fm: [['name', 'funding-liquidity'], ['type', 'super skill'],
+       ['description', 'Use when an advisor asks how a client can pay for something, raise cash or cover a bill. Picks one playbook and loads only the building blocks that playbook lists.'],
+       ['playbooks', 'buy-a-home, buy-a-boat, pay-a-tax-bill, raise-cash'],
+       ['building_blocks', 'check-liquidity, compare-mortgages, borrow-against-portfolio, sell-tax-smart, pay-taxes, check-plan-impact']],
+  secs: [
+    {h: 'Route the question', ul: ['Home, condo, property, mortgage → buy-a-home', 'Boat, yacht, vessel → buy-a-boat', 'Taxes, IRS, estimated payment → pay-a-tax-bill', 'Liquidity, capital call, bridge, raise cash → raise-cash', 'No match → run check-liquidity on its own and say no playbook fit']},
+    {h: 'Guardrails for every playbook', ol: ['Keep 6 months of spending as an emergency reserve.', 'Keep tax from selling under $50K unless the client approves more.', 'Keep a pledged line under 50% of borrowing capacity.', 'Keep housing cost under 28% and all debt payments under 36% of gross income.', 'Never draw on retirement accounts or private funds.']},
+    {h: 'Pick an option', p: 'Drop options that break a guardrail. Rank the rest by tax now plus interest for the period. If every option breaks one, show the closest and flag it for a planning conversation.'},
+    {h: 'Answer format', p: 'Recommendation first, then the options compared, then the points to cover with the client. The coach only answers the advisor; it never moves money. Mark every rate as a placeholder until an agent returns a live quote.'}
+  ]
+};
+
+const PLAYBOOKS = [
+  {id: 'buy-a-home', name: 'Buy a home', unit: 'price', def: 2400000,
+   triggers: [['house', 2], ['home', 2], ['condo', 2], ['apartment', 2], ['townhouse', 2], ['real estate', 2], ['down payment', 2], ['mortgage', 2], ['property', 1]],
+   uses: ['check-liquidity', 'compare-mortgages', 'borrow-against-portfolio', 'sell-tax-smart', 'check-plan-impact'],
+   fm: [['description', 'Use when an advisor asks how a client should pay for or finance a home.'], ['triggers', 'house, home, condo, property, down payment, mortgage']],
+   secs: [
+     {h: 'Steps', ol: ['Run check-liquidity to find cash available now.', 'Get a jumbo quote at 20% down from compare-mortgages.', 'Get borrowing capacity and a line rate from borrow-against-portfolio.', 'Price every sale with sell-tax-smart.', 'Check housing and debt ratios with check-plan-impact.']},
+     {h: 'Options to build', ul: ['A. Jumbo mortgage. Closing money from cash, then a tax-smart sale.', 'B. Jumbo mortgage. Borrow the down-payment gap on a pledged line and sell nothing.', 'C. All cash: cash first, then a tax-smart sale.']},
+     {h: 'Pick one', p: 'Use the super skill guardrails and ranking. Closing costs are 2.5% of the price. Count property tax and insurance (1.5% a year) in housing cost.'}
+   ]},
+  {id: 'buy-a-boat', name: 'Buy a boat', unit: 'price', def: 650000,
+   triggers: [['boat', 2], ['yacht', 2], ['sailboat', 2], ['catamaran', 2], ['vessel', 2], ['marine', 1]],
+   uses: ['check-liquidity', 'borrow-against-portfolio', 'sell-tax-smart', 'check-plan-impact'],
+   fm: [['description', 'Use when an advisor asks how a client should pay for a boat or yacht.'], ['triggers', 'boat, yacht, sailboat, catamaran, vessel']],
+   secs: [
+     {h: 'Steps', ol: ['Run check-liquidity.', 'Add about 6% for sales tax, registration and survey.', 'Ask borrow-against-portfolio for a line rate and a marine loan quote (20% down, 20 years).', 'Price the cash option with sell-tax-smart.', 'Check debt payments with check-plan-impact.']},
+     {h: 'Options to build', ul: ['A. Cash first, then a pledged line for the rest.', 'B. Marine loan with 20% down.', 'C. Pay cash: cash first, then a tax-smart sale.']},
+     {h: 'Pick one', p: 'Use the super skill guardrails and ranking. A boat loses value, so say so when financing costs more than the tax from selling.'}
+   ]},
+  {id: 'pay-a-tax-bill', name: 'Pay a tax bill', unit: 'amount', def: 600000,
+   triggers: [['tax bill', 2], ['taxes', 2], ['irs', 2], ['estimated payment', 2], ['estimated tax', 2], ['april 15', 2], ['tax', 1], ['owe', 1]],
+   uses: ['check-liquidity', 'pay-taxes', 'sell-tax-smart', 'borrow-against-portfolio'],
+   fm: [['description', 'Use when a client owes a large tax bill and the advisor asks how to pay it.'], ['triggers', 'taxes, tax bill, IRS, estimated tax, April 15']],
+   secs: [
+     {h: 'Steps', ol: ['Run check-liquidity. Money set aside for the January 15 estimate stays set aside.', 'Run pay-taxes for due dates, safe-harbor status and what an IRS plan would cost.', 'Price the gap with sell-tax-smart and borrow-against-portfolio.']},
+     {h: 'Options to build', ul: ['A. Cash first, then a tax-smart sale.', 'B. Cash first, then a pledged line repaid over the stated period (12 months if none).', 'C. Pay what cash covers and put the rest on an IRS payment plan.']},
+     {h: 'Pick one', p: 'Never pick an option that triggers IRS penalties. Otherwise use the super skill ranking.'}
+   ]},
+  {id: 'raise-cash', name: 'Raise cash', unit: 'amount', def: 750000,
+   triggers: [['liquidity', 2], ['capital call', 2], ['bridge', 2], ['tuition', 2], ['raise', 1], ['cash', 1], ['liquid', 1]],
+   uses: ['check-liquidity', 'borrow-against-portfolio', 'sell-tax-smart', 'check-plan-impact'],
+   fm: [['description', 'Use when a client needs a lump of cash soon: a capital call, tuition, a bridge before a sale.'], ['triggers', 'liquidity, raise cash, capital call, bridge, tuition']],
+   secs: [
+     {h: 'Steps', ol: ['Run check-liquidity.', 'Find out how long the money is needed. If the question does not say, treat it as permanent (12 months).', 'Price a pledged line for that period and a tax-smart sale.', 'Check debt payments with check-plan-impact.']},
+     {h: 'Options to build', ul: ['A. Cash first, then a pledged line as a bridge.', 'B. Cash first, then a tax-smart sale.', 'C. Pledged line for the full amount; keep the cash.']},
+     {h: 'Pick one', p: 'Short needs usually favor borrowing and permanent ones favor selling. Let the numbers decide: tax now against interest for the period.'}
+   ]}
+];
+
+const BLOCKS = [
+  {id: 'check-liquidity', name: 'Check liquidity', agents: ['banking', 'investment', 'planning'],
+   desc: 'Finds how much money a household can use now and how fast the rest could be ready.',
+   secs: [{h: 'Steps', ol: ['Banking Agent: balances for checking, savings and money market.', 'Planning Agent: the emergency reserve rule and money set aside for known bills.', 'Investment Agent: holdings, grouped by how fast they turn into cash.']},
+          {h: 'Liquidity tiers', ul: ['T+0: cash and money market, minus the reserve and set-asides', 'T+1: listed securities (US trades settle the next business day)', '3–5 days: borrowing capacity on a pledged line', 'Restricted: retirement accounts, private funds, real estate']},
+          {h: 'Return', p: 'Available now, each tier, and anything that blocks a tier.'}]},
+  {id: 'compare-mortgages', name: 'Compare mortgages', agents: ['mortgage'],
+   desc: 'Gets home loan quotes and the monthly payment.',
+   secs: [{h: 'Steps', ol: ['Mortgage Agent: jumbo quote at 20% down, 30-year fixed.', 'Return loan amount, rate, monthly principal and interest, and year-one interest.', 'Flag it if the price or credit profile needs more than 20% down.']}]},
+  {id: 'borrow-against-portfolio', name: 'Borrow against portfolio', agents: ['investment', 'lending'],
+   desc: 'Prices a pledged asset line, and asset-backed loans, against the taxable portfolio.',
+   secs: [{h: 'Steps', ol: ['Investment Agent: positions eligible to pledge.', 'Lending Agent: advance rate per position (about 70% on diversified funds, 50% on single stocks) and the line rate.', 'Return capacity, how much of it each draw uses, and how far markets could fall before a margin call.', 'For a boat or plane, also get an asset-backed loan quote.']}]},
+  {id: 'sell-tax-smart', name: 'Sell tax-smart', agents: ['investment', 'tax'],
+   desc: 'Chooses which lots to sell and estimates the tax.',
+   secs: [{h: 'Steps', ol: ['Investment Agent: tax lots with cost basis and holding period.', 'Sell lots at a loss first, then long-term lots with the smallest gain, and short-term lots last.', 'Tax Agent: estimate tax at 23.8% on long-term gains (20% plus 3.8% NIIT) and 40.8% on short-term gains.', 'Do not buy the same fund back within 30 days of a loss sale (wash-sale rule).']}]},
+  {id: 'pay-taxes', name: 'Pay taxes', agents: ['tax', 'banking'],
+   desc: 'Works out what is due when, and how to pay it.',
+   secs: [{h: 'Steps', ol: ['Tax Agent: amounts and due dates (January 15 estimate, April 15 balance, state).', 'Tax Agent: safe-harbor check (110% of last year’s tax for high earners).', 'Tax Agent: what an IRS payment plan would cost in interest and penalties.', 'Banking Agent: the account that will pay, through IRS Direct Pay or EFTPS.']}]},
+  {id: 'check-plan-impact', name: 'Check plan impact', agents: ['planning'],
+   desc: 'Tests each option against the household’s affordability ratios.',
+   secs: [{h: 'Steps', ol: ['Planning Agent: gross income and current debt payments.', 'Work out housing cost (principal, interest, property tax, insurance) and all debt payments as a share of income.', 'Compare to 28% and 36%, and confirm the reserve is intact.']}]}
+];
+
+const PRESETS = [
+  {id: 'home', label: 'Buy a $2.4M home', q: 'My client wants to buy a $2.4M house in Greenwich. How should they fund it?'},
+  {id: 'boat', label: 'Buy a $650K boat', q: 'Client wants to buy a $650K boat next spring. Should they pay cash or finance it?'},
+  {id: 'raise', label: 'Raise $750K for 4 months', q: 'The Whitfields need $750K for a capital call in two weeks. Their business sale should close in about 4 months. What is the best way to raise the cash?'},
+  {id: 'tax', label: 'Pay a $600K tax bill', q: 'They owe $600K in federal taxes on April 15 after selling a rental property. What is the best way to pay the IRS?'}
+];
+/* ---------- Engine: the rules the skill files describe ---------- */
+const total = a => a.reduce((s, x) => s + x.value, 0);
+const RESERVE = HH.monthlySpend * HH.reserveMonths;
+const CASH = total(HH.cash), SET_ASIDE = total(HH.setAside);
+const AVAIL = CASH - RESERVE - SET_ASIDE;
+const TAXABLE = total(HH.lots), RESTRICTED = total(HH.restricted);
+const CAPACITY = HH.lots.reduce((s, l) => s + l.value * l.advance, 0);
+const GAIN = HH.lots.reduce((s, l) => s + l.value - l.basis, 0);
+const LOSS_LOTS = HH.lots.filter(l => l.value < l.basis);
+
+const trimNum = x => x.indexOf('.') > -1 ? x.replace(/\.?0+$/, '') : x;
+function money(n) {
+  const neg = n < 0; n = Math.abs(n); let s;
+  if (n >= 999500) s = '$' + trimNum((n / 1e6).toFixed(2)) + 'M';
+  else if (n >= 1e5) s = '$' + Math.round(n / 1e3) + 'K';
+  else if (n >= 1e3) s = '$' + trimNum((n / 1e3).toFixed(1)) + 'K';
+  else s = '$' + Math.round(n);
+  return (neg ? '−' : '') + s;
+}
+const dollars = n => '$' + Math.round(n).toLocaleString('en-US');
+const pct = (x, d = 1) => trimNum((x * 100).toFixed(d)) + '%';
+const rate = x => (x * 100).toFixed(2) + '%';
+
+function loanInfo(kind, amt, r, years) {
+  const i = r / 12, m = amt * i / (1 - Math.pow(1 + i, -years * 12));
+  let b = amt, interest = 0;
+  for (let k = 0; k < 12; k++) { const x = b * i; interest += x; b -= m - x; }
+  return {kind, amt, rate: r, years, monthly: m, annual: m * 12, interest};
+}
+function lineInfo(amt, months) {
+  if (amt <= 0.5) return null;
+  return {amt, months, rate: RATES.line, annual: amt * RATES.line, interest: amt * RATES.line * months / 12,
+          util: amt / CAPACITY, drop: Math.max(0, 1 - amt / CAPACITY), feasible: amt <= CAPACITY};
+}
+const gainPct = l => (l.value - l.basis) / l.value;
+const SALE_ORDER = HH.lots.slice().sort((a, b) => {
+  const g = l => l.term === 'short' ? 2 : (l.value < l.basis ? 0 : 1);
+  return g(a) - g(b) || gainPct(a) - gainPct(b);
+});
+function sellPlan(amount) {
+  if (amount <= 0.5) return null;
+  let left = amount, lt = 0, st = 0; const parts = [];
+  for (const l of SALE_ORDER) {
+    if (left <= 0.5) break;
+    const a = Math.min(left, l.value), g = gainPct(l) * a;
+    parts.push({lot: l, amt: a, gain: g});
+    if (l.term === 'short') st += g; else lt += g;
+    left -= a;
+  }
+  const net = lt + st; let tax = 0;
+  if (lt >= 0 && st >= 0) tax = lt * RATES.ltcg + st * RATES.stcg;
+  else if (net > 0) tax = net * (lt < 0 ? RATES.stcg : RATES.ltcg);
+  return {amount, parts, gain: net, tax, carry: net < 0 ? -net : 0, feasible: left <= 0.5, short: Math.max(0, left)};
+}
+
+function opt(o) {
+  o.tax = o.sale ? o.sale.tax : 0;
+  o.interest = (o.loan ? o.loan.interest : 0) + (o.line ? o.line.interest : 0) + (o.irs ? o.irs.cost : 0);
+  o.cost = o.tax + o.interest;
+  o.newDebt = (o.loan ? o.loan.amt : 0) + (o.line ? o.line.amt : 0);
+  o.debt = o.debt || 0;
+  o.feasible = !(o.sale && !o.sale.feasible) && !(o.line && !o.line.feasible);
+  o.blocker = o.sale && !o.sale.feasible ? `it needs ${money(o.sale.short)} more than the taxable account holds`
+    : (o.line && !o.line.feasible ? `it needs ${money(o.line.amt - CAPACITY)} more than the borrowing capacity` : '');
+  o.parts = (o.sale ? 1 : 0) + (o.loan ? 1 : 0) + (o.line ? 1 : 0) + (o.irs ? 1 : 0);
+  return o;
+}
+
+/* One builder per playbook: the "Options to build" section of each SKILL.md */
+const BUILD = {
+  'buy-a-home'(P) {
+    const due = P * (.2 + RATES.closing), cash = Math.min(AVAIL, due), gap = due - cash, carry = P * RATES.carry;
+    const loan = loanInfo('Jumbo mortgage', P * .8, RATES.mortgage, 30), housing = (loan.annual + carry) / HH.income;
+    const note = '20% down + 2.5% closing';
+    const A = opt({key: 'A', name: 'Jumbo mortgage, 20% down', blurb: 'Closing money from cash, the rest from a tax-smart sale', cashUse: cash, sale: sellPlan(gap), loan, housing, debt: housing, due, dueNote: note, ready: '30–45 days'});
+    A.headline = `Finance it with a jumbo mortgage. Cover the ${money(due)} due at closing with ${money(cash)} of cash${A.sale ? ` and a ${money(A.sale.amount)} tax-smart sale` : ''}.`;
+    const line = lineInfo(gap, 12);
+    const B = opt({key: 'B', name: 'Jumbo mortgage + pledged line', blurb: 'Borrow the down-payment gap against the portfolio and sell nothing', cashUse: cash, line, loan, housing, debt: (loan.annual + carry + (line ? line.annual : 0)) / HH.income, due, dueNote: note, ready: '30–45 days'});
+    B.headline = line ? `Finance it with a jumbo mortgage and borrow ${money(line.amt)} of the ${money(due)} due at closing on a pledged line, so nothing is sold.` : A.headline;
+    const all = P * (1 + RATES.closing), cashC = Math.min(AVAIL, all);
+    const C = opt({key: 'C', name: 'All cash', blurb: 'Cash first, then a tax-smart sale for the rest', cashUse: cashC, sale: sellPlan(all - cashC), housing: carry / HH.income, debt: carry / HH.income, due: all, dueNote: 'price + 2.5% closing', ready: 'About a week'});
+    C.headline = `Pay all cash: ${money(cashC)} from cash${C.sale ? ` and a ${money(C.sale.amount)} tax-smart sale` : ''}.`;
+    return {opts: [A, B, C], dest: "closing attorney's escrow", period: 'year one'};
+  },
+  'buy-a-boat'(P) {
+    const all = P * (1 + RATES.boatFees), cash = Math.min(AVAIL, all), note = 'price + about 6% tax and fees';
+    const A = opt({key: 'A', name: 'Pledged line', blurb: 'Cash first, then borrow the rest against the portfolio', cashUse: cash, line: lineInfo(all - cash, 12), due: all, dueNote: note, ready: '3–5 days'});
+    A.debt = A.line ? A.line.annual / HH.income : 0;
+    A.headline = A.line ? `Put ${money(cash)} of cash toward the boat and borrow ${money(A.line.amt)} on a pledged line.` : `Pay the ${money(all)} from cash on hand.`;
+    const down = P * (.2 + RATES.boatFees), cashB = Math.min(AVAIL, down), loan = loanInfo('Marine loan', P * .8, RATES.marine, 20);
+    const B = opt({key: 'B', name: 'Marine loan, 20% down', blurb: 'Down payment and fees from cash; 20-year loan', cashUse: cashB, sale: sellPlan(down - cashB), loan, debt: loan.annual / HH.income, due: all, dueNote: note, ready: '2–3 weeks'});
+    B.down = down;
+    B.headline = `Take a ${money(loan.amt)} marine loan and pay the ${money(down)} down payment and fees from ${B.sale ? 'cash and a small tax-smart sale' : 'cash'}.`;
+    const C = opt({key: 'C', name: 'Pay cash', blurb: 'Cash first, then a tax-smart sale', cashUse: cash, sale: sellPlan(all - cash), due: all, dueNote: note, ready: '2–3 days'});
+    C.headline = `Pay cash: ${money(cash)} from cash${C.sale ? ` plus a ${money(C.sale.amount)} tax-smart sale` : ''}.`;
+    return {opts: [A, B, C], dest: 'dealer escrow', period: 'year one'};
+  },
+  'raise-cash'(amt, M) {
+    const cash = Math.min(AVAIL, amt), gap = amt - cash, note = 'amount needed';
+    const A = opt({key: 'A', name: 'Cash + pledged line', blurb: `Cash first; bridge the rest for ${M} months`, cashUse: cash, line: lineInfo(gap, M), due: amt, dueNote: note, ready: '3–5 days'});
+    A.debt = A.line ? A.line.annual / HH.income : 0;
+    A.headline = A.line ? `Use ${money(cash)} of cash and bridge the other ${money(A.line.amt)} with a pledged line until the money comes back${M < 12 ? ` in about ${M} months` : ''}.` : `Cover the ${money(amt)} from cash on hand.`;
+    const B = opt({key: 'B', name: 'Cash + tax-smart sale', blurb: 'Cash first; sell the rest', cashUse: cash, sale: sellPlan(gap), due: amt, dueNote: note, ready: '2–3 days'});
+    B.headline = B.sale ? `Use ${money(cash)} of cash and sell ${money(B.sale.amount)} of investments, starting with the lots that cost the least tax.` : A.headline;
+    const line = lineInfo(amt, M);
+    const C = opt({key: 'C', name: 'Pledged line for all of it', blurb: 'Keep the cash as a cushion; borrow the full amount', cashUse: 0, line, debt: line ? line.annual / HH.income : 0, due: amt, dueNote: note, ready: '3–5 days'});
+    C.headline = `Borrow the full ${money(amt)} on a pledged line and keep the cash as a cushion.`;
+    return {opts: [A, B, C], dest: 'capital call account', period: M < 12 ? `over ${M} months` : 'year one'};
+  },
+  'pay-a-tax-bill'(T, M) {
+    const cash = Math.min(AVAIL, T), gap = T - cash, note = 'due April 15';
+    const A = opt({key: 'A', name: 'Cash + tax-smart sale', blurb: 'Cash first; sell the rest', cashUse: cash, sale: sellPlan(gap), due: T, dueNote: note, ready: '2–3 days'});
+    A.headline = `Pay the ${money(T)} from ${money(cash)} of cash${A.sale ? ` and a ${money(A.sale.amount)} tax-smart sale` : ''}, through EFTPS before April 15.`;
+    const B = opt({key: 'B', name: 'Cash + pledged line', blurb: `Cash first; borrow the rest and repay over ${M} months`, cashUse: cash, line: lineInfo(gap, M), due: T, dueNote: note, ready: '3–5 days'});
+    B.debt = B.line ? B.line.annual / HH.income : 0;
+    B.headline = B.line ? `Pay from ${money(cash)} of cash and a ${money(B.line.amt)} pledged-line draw, then repay the line over ${M} months.` : A.headline;
+    const irs = gap > 0.5 ? {amt: gap, cost: gap * RATES.irs * M / 12} : null;
+    const C = opt({key: 'C', name: 'Cash + IRS payment plan', blurb: 'Pay what cash covers; pay the IRS the rest over time', cashUse: cash, irs, due: T, dueNote: note, ready: 'Plan setup'});
+    C.headline = irs ? `Pay ${money(cash)} now and put ${money(irs.amt)} on an IRS payment plan.` : A.headline;
+    return {opts: [A, B, C], dest: 'IRS via EFTPS', period: M < 12 ? `over ${M} months` : 'year one'};
+  }
+};
+
+/* Guardrails from the super skill file */
+function check(o, pb) {
+  const c = [{label: 'Reserve kept', pass: true}];
+  if (o.sale) c.push({label: 'Tax < $50K', pass: o.sale.tax <= LIMITS.tax, why: `tax from selling would be ${money(o.sale.tax)}, over the ${money(LIMITS.tax)} limit`});
+  if (o.line) c.push({label: 'Line < 50%', pass: o.line.util <= LIMITS.line, why: `the line would use ${pct(o.line.util, 0)} of borrowing capacity, over the 50% limit`});
+  if (pb === 'buy-a-home') c.push({label: 'Housing < 28%', pass: o.housing <= LIMITS.housing, why: `housing cost would be ${pct(o.housing)} of income, over 28%`});
+  if (o.loan || o.line || pb === 'buy-a-home') c.push({label: 'Debt < 36%', pass: o.debt <= LIMITS.debt, why: `debt payments would be ${pct(o.debt)} of income, over 36%`});
+  if (o.irs) c.push({label: 'No IRS penalty', pass: false, why: `it leaves ${money(o.irs.amt)} unpaid, which brings IRS interest and penalties`});
+  c.push({label: 'Retirement untouched', pass: true});
+  o.checks = c; o.fails = c.filter(x => !x.pass);
+}
+const sig = o => [Math.round(o.cashUse), o.sale ? Math.round(o.sale.amount) : 0, o.loan ? o.loan.kind : '', o.line ? Math.round(o.line.amt) : 0, o.irs ? 1 : 0].join('|');
+function solve(pb, amount, months) {
+  const r = BUILD[pb.id](amount, months), seen = new Set();
+  r.opts = r.opts.filter(o => { const s = sig(o); if (seen.has(s)) return false; seen.add(s); return true; });
+  r.opts.forEach(o => check(o, pb.id));
+  r.ranked = r.opts.filter(o => o.feasible).sort((a, b) => a.fails.length - b.fails.length || a.cost - b.cost || a.parts - b.parts);
+  r.rec = r.ranked[0] || null;
+  return r;
+}
+
+/* Router: trigger words pick the playbook; amounts and durations are pulled from the text */
+const NUM_WORDS = {one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, 'a few': 3, 'a couple of': 2, 'a couple': 2, several: 4, a: 1};
+function parseQuestion(q) {
+  const s = q.toLowerCase();
+  let amount = null;
+  const m = s.match(/\$\s?(\d[\d,]*(?:\.\d+)?)\s*(k|mm|m|million|thousand|bn|b|billion)?\b/) || s.match(/\b(\d+(?:\.\d+)?)\s*(k|mm|m|million|thousand)\b/);
+  if (m) {
+    const u = m[2] || '';
+    const mult = /^(k|thousand)$/.test(u) ? 1e3 : /^(m|mm|million)$/.test(u) ? 1e6 : /^(b|bn|billion)$/.test(u) ? 1e9 : 1;
+    const v = parseFloat(m[1].replace(/,/g, '')) * mult;
+    if (v >= 1000) amount = v;
+  }
+  /* Expert skills are more specific, so a match (that also meets its amount threshold) beats the general playbook */
+  let best = null;
+  for (const pb of [...CUSTOM, ...PLAYBOOKS]) {
+    let score = 0; const hits = [];
+    const trig = pb.custom ? pb.triggers.map(w => [w, 2]) : pb.triggers;
+    for (const [w, wt] of trig) {
+      if (!w) continue;
+      const re = new RegExp('\\b' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ +/g, '\\s+') + '\\b');
+      if (re.test(s)) { score += wt; hits.push(w); }
+    }
+    if (pb.custom && score > 0) { if (pb.minAmount && !(amount >= pb.minAmount)) continue; score += 10; }
+    if (score > 0 && (!best || score > best.score)) best = {pb, score, hits};
+  }
+  let months = null;
+  const mm = s.match(/\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|a few|a couple of|a couple|several|a)\s+months?\b/);
+  if (mm) months = /^\d/.test(mm[1]) ? parseInt(mm[1], 10) : NUM_WORDS[mm[1]];
+  else if (/\b(\d|one|two|three|a)\s+years?\b|permanent|for good|long[- ]term|indefinitely/.test(s)) months = 12;
+  const generic = /\b(fund|pay|afford|buy|purchase|money|loan|borrow|sell|financ\w*|spend)\b/.test(s);
+  return {pb: best ? best.pb : null, hits: best ? best.hits : [], amount, months, generic};
+}
+
+/* What each building block asks its agents, and what comes back */
+const CALLS = {
+  'check-liquidity': () => ({title: 'Checked liquidity', calls: [
+      {a: 'banking', fn: `get_balances("${HH.id}")`, out: HH.cash.map(c => `${c.label} ${money(c.value)}`).join(' · ')},
+      {a: 'planning', fn: `get_set_asides("${HH.id}")`, out: `Reserve ${money(RESERVE)} (6 months × ${money(HH.monthlySpend)}) · Jan 15 estimate ${money(SET_ASIDE)}`},
+      {a: 'investment', fn: `get_positions("${HH.id}")`, out: `Taxable ${money(TAXABLE)} · ` + HH.restricted.map(r => `${r.label} ${money(r.value)}`).join(' · ')}],
+    result: `Available now ${money(AVAIL)}. Next business day: ${money(TAXABLE)} of listed securities. Restricted: ${money(RESTRICTED)}.`}),
+  'compare-mortgages': (P, pb, sol) => {
+    const L = sol.opts.find(o => o.loan && o.loan.kind === 'Jumbo mortgage').loan;
+    return {title: 'Got a jumbo mortgage quote', calls: [
+      {a: 'mortgage', fn: `quote_jumbo(price=${money(P.amount)}, down=20%)`, out: `${money(L.amt)} · 30-yr fixed · ${rate(L.rate)}* · ${dollars(L.monthly)}/mo`}],
+      result: `Year-one interest about ${money(L.interest)}.`};
+  },
+  'borrow-against-portfolio': (P, pb, sol) => {
+    const calls = [
+      {a: 'investment', fn: 'get_positions(pledgeable=true)', out: `${HH.lots.length} taxable lots, ${money(TAXABLE)}`},
+      {a: 'lending', fn: `get_borrowing_capacity("${HH.id}")`, out: `${money(CAPACITY)} (70% on funds, 50% on single stocks)`},
+      {a: 'lending', fn: 'quote_pledged_line()', out: `${rate(RATES.line)}* variable, interest only`}];
+    const ml = sol.opts.find(o => o.loan && o.loan.kind === 'Marine loan');
+    if (ml) calls.push({a: 'lending', fn: `quote_marine_loan(${money(ml.loan.amt)}, years=20)`, out: `${rate(ml.loan.rate)}* · ${dollars(ml.loan.monthly)}/mo`});
+    const draws = sol.opts.filter(o => o.line).map(o => `${o.key} draws ${money(o.line.amt)} (${pct(o.line.util, 0)} of capacity)`);
+    return {title: 'Priced borrowing against the portfolio', calls, result: draws.length ? draws.join(' · ') + '.' : 'No option needs the line.'};
+  },
+  'sell-tax-smart': (P, pb, sol) => {
+    const lossAmt = LOSS_LOTS.reduce((s, l) => s + l.basis - l.value, 0);
+    const calls = [{a: 'investment', fn: `get_tax_lots("${HH.id}")`, out: `${HH.lots.length} lots · ${money(GAIN)} unrealized gain · ${LOSS_LOTS.length} lot at a ${money(lossAmt)} loss`}];
+    const seen = new Set();
+    sol.opts.filter(o => o.sale).forEach(o => {
+      const k = Math.round(o.sale.amount); if (seen.has(k)) return; seen.add(k);
+      calls.push({a: 'tax', fn: `estimate_gains_tax(sell=${money(o.sale.amount)})`, out: o.sale.gain > 0 ? `Gain ${money(o.sale.gain)} → tax ≈ ${money(o.sale.tax)}` : `Net loss ${money(-o.sale.gain)} → no tax`});
+    });
+    return {title: 'Priced each sale, lot by lot', calls, result: `Sale order: ${SALE_ORDER.map(l => l.label).join(' → ')}.`};
+  },
+  'check-plan-impact': (P, pb, sol) => ({title: 'Checked affordability', calls: [
+      {a: 'planning', fn: 'check_ratios(options)', out: sol.opts.map(o => `${o.key}: ${pb.id === 'buy-a-home' ? `housing ${pct(o.housing)}, ` : ''}debt ${pct(o.debt)}`).join(' · ')}],
+    result: 'Every option keeps the emergency reserve.'}),
+  'pay-taxes': (P) => ({title: 'Checked due dates and penalties', calls: [
+      {a: 'tax', fn: `get_due_dates("${HH.id}")`, out: `Jan 15: Q4 estimate ${money(SET_ASIDE)} · Apr 15: balance ${money(P.amount)}`},
+      {a: 'tax', fn: 'check_safe_harbor(2026)', out: 'Estimates cover 110% of 2025 tax, so no underpayment penalty*'},
+      {a: 'tax', fn: `quote_irs_plan(${money(Math.max(0, P.amount - AVAIL))})`, out: `Interest plus late-payment penalty ≈ ${pct(RATES.irs, 0)} a year*`},
+      {a: 'banking', fn: 'get_payment_account()', out: 'Money market fund, enrolled in EFTPS'}],
+    result: 'Pay by April 15 to avoid late-payment penalties.'})
+};
+function blockStep(id, parent, P, pb, sol) {
+  const c = CALLS[id](P, pb, sol), agents = [...new Set(c.calls.map(x => x.a))];
+  return {block: id, skill: id, title: c.title, calls: c.calls, result: c.result,
+          nodes: ['b:' + id, ...agents.map(a => 'a:' + a)], edges: [[parent, 'b:' + id], ...agents.map(a => ['b:' + id, 'a:' + a])]};
+}
+function rankStep(pb, sol) {
+  const lines = sol.opts.map(o => !o.feasible ? `${o.key}: not possible, ${o.blocker}`
+    : `${o.key}: ${o.fails.length ? `breaks ${o.fails.map(f => f.label).join(', ')}` : `passes all ${o.checks.length} guardrails`} · tax + interest ${money(o.cost)}`);
+  const r = sol.rec;
+  return {skill: 'funding-liquidity · guardrails', title: 'Applied guardrails and ranked the options', nodes: ['f:funding-liquidity'], edges: [], calls: [], lines,
+          result: !r ? 'No option is possible. Flagged for a planning conversation.'
+            : r.fails.length ? `Every option breaks a guardrail. Showing ${r.key}, which breaks the fewest, with a flag.`
+            : `Picked ${r.key}: lowest tax + interest of the options that pass.`};
+}
+function buildRun(q) {
+  const P = parseQuestion(q);
+  if (!P.pb && !P.generic) return {P, mode: 'none', steps: [{skill: 'coach · router', title: 'No skill family matched', nodes: [], edges: [], calls: [],
+    result: 'Nothing in the question points to a skill. The coach would answer in general terms or ask what the client is trying to pay for.'}]};
+  const skill = P.pb, pb = skill && skill.custom ? PLAYBOOKS.find(p => p.id === skill.base) : skill;
+  if (pb) {
+    P.amountStated = P.amount != null; if (!P.amountStated) P.amount = pb.def;
+    P.monthsStated = P.months != null; P.months = Math.min(12, Math.max(1, P.months || 12));
+  }
+  const sol = pb ? solve(pb, P.amount, P.months) : null, steps = [];
+  const expert = skill && skill.custom ? runExpertChecks(skill, P, sol) : null;
+  steps.push({skill: 'coach · router', title: 'Matched the Funding & Liquidity super skill', nodes: ['f:funding-liquidity'], edges: [], calls: [],
+    result: (P.hits.length ? `Trigger words: ${P.hits.map(h => '“' + h + '”').join(', ')}. ` : 'General money question. ')
+      + (expert && skill.minAmount ? `${money(P.amount)} meets the ${money(skill.minAmount)} threshold, so the expert skill wins over ${pb.name}. ` : '')
+      + 'The other 4 skill families stay unloaded.'});
+  if (skill) {
+    const skipped = BLOCKS.filter(b => !pb.uses.includes(b.id)).map(b => b.id);
+    steps.push({skill: 'funding-liquidity', title: `Loaded the ${skill.name} playbook`, nodes: ['p:' + skill.id], edges: [['f:funding-liquidity', 'p:' + skill.id]], calls: [],
+      result: expert ? `Written by ${skill.author || 'an expert'}. Builds on ${pb.id} and adds ${expert.rows.length} checks and ${skill.questions.length} questions.`
+        : `It lists ${pb.uses.length} of the ${BLOCKS.length} building blocks.${skipped.length ? ` Not loaded: ${skipped.join(', ')}.` : ''}`});
+  } else steps.push({skill: 'funding-liquidity', title: 'No playbook matched', nodes: [], edges: [], calls: [], result: 'The super skill falls back to check-liquidity on its own.'});
+  const parent = skill ? 'p:' + skill.id : 'f:funding-liquidity';
+  if (expert) steps.push(expert.step);
+  for (const id of (pb ? pb.uses : ['check-liquidity'])) steps.push(blockStep(id, parent, P, pb, sol));
+  if (pb) {
+    steps.push(rankStep(pb, sol));
+  }
+  return {P, pb, skill, sol, steps, expert, mode: pb ? 'playbook' : 'liquidity'};
+}
+/* ---------- Expert-authored skills ---------- */
+/* Each check asks one agent for one number about the household and flags it past the expert's limit. */
+const METRICS = {
+  concentration: {agent: 'investment', short: 'Single-stock share of portfolio', label: 'Single-stock holdings as a share of the taxable portfolio', fn: 'get_concentration', unit: 'pct', dir: 'max', def: 20,
+    calc: () => HH.lots.find(l => l.id === 'stocks').value / TAXABLE},
+  cashMonths: {agent: 'banking', short: 'Cash left after closing', label: 'Cash left after closing, in months of spending', fn: 'cash_after_purchase', unit: 'months', dir: 'min', def: 12,
+    calc: (P, sol) => (CASH - sol.opts[0].cashUse) / HH.monthlySpend},
+  reserve: {agent: 'planning', short: 'Emergency reserve on file', label: 'Emergency reserve on file, in months of spending', fn: 'get_set_asides', unit: 'months', dir: 'min', def: 6,
+    calc: () => HH.reserveMonths},
+  capacityUse: {agent: 'lending', short: 'Closing money vs borrowing capacity', label: 'Money due at closing as a share of borrowing capacity', fn: 'get_borrowing_capacity', unit: 'pct', dir: 'max', def: 50,
+    calc: (P, sol) => sol.opts[0].due / CAPACITY},
+  existingDebt: {agent: 'lending', short: 'Existing debt payments', label: 'Existing debt payments as a share of income', fn: 'get_existing_debt', unit: 'pct', dir: 'max', def: 10,
+    calc: () => 0},
+  saleTax: {agent: 'tax', short: 'Tax if closing money comes from selling', label: 'Tax if the closing money is raised by selling', fn: 'estimate_gains_tax', unit: 'usd', dir: 'max', def: 100000,
+    calc: (P, sol) => { const sp = sellPlan(Math.max(0, sol.opts[0].due - AVAIL)); return sp ? sp.tax : 0; }},
+  housing: {agent: 'planning', short: 'Housing cost vs income', label: 'Housing or payment cost as a share of gross income', fn: 'check_ratios', unit: 'pct', dir: 'max', def: 28,
+    calc: (P, sol) => sol.opts[0].debt},
+  loanSize: {agent: 'mortgage', short: 'Loan size', label: 'Loan amount', fn: 'quote_jumbo', unit: 'usd', dir: 'max', def: 3000000,
+    calc: (P, sol) => { const o = sol.opts.find(x => x.loan); return o ? o.loan.amt : 0; }}
+};
+const thrTxt = (m, t) => !isFinite(t) ? '?' : m.unit === 'pct' ? `${t}%` : m.unit === 'months' ? `${t} months` : money(t);
+const valTxt = (m, v) => m.unit === 'pct' ? pct(v) : m.unit === 'months' ? `${trimNum(v.toFixed(1))} months` : money(v);
+const ruleTxt = (m, t) => `flag if ${m.dir === 'max' ? 'over' : 'under'} ${thrTxt(m, t)}`;
+const agentName = id => (AGENTS.find(a => a.id === id) || {name: id}).name;
+
+const DEFAULT_CUSTOM = [{
+  custom: true, id: 'buy-a-home-over-5m', name: 'Buy a home over $5M', author: 'Private client lending lead', base: 'buy-a-home',
+  desc: 'Use when an advisor asks how a client should fund a home priced at $5M or more.',
+  triggers: ['house', 'home', 'estate', 'property', 'condo', 'penthouse'], minAmount: 5000000,
+  checks: [
+    {metric: 'concentration', thr: 20, fail: 'Talk about trimming the single stocks before pledging or selling them.'},
+    {metric: 'cashMonths', thr: 12, fail: 'Keep a year of spending in cash after closing and size the down payment around it.'},
+    {metric: 'reserve', thr: 6, fail: 'Rebuild the emergency reserve before closing.'},
+    {metric: 'existingDebt', thr: 10, fail: 'Pull a full credit picture before quoting.'},
+    {metric: 'saleTax', thr: 100000, fail: 'Bring in the client’s CPA before any sale.'},
+    {metric: 'housing', thr: 28, fail: 'Show the carrying cost and test a lower price or a larger down payment.'},
+    {metric: 'loanSize', thr: 3000000, fail: 'Send it to the private bank jumbo desk for a manual underwrite.'}],
+  questions: ['Is this a primary home, a second home or an investment property?', 'Will the title be held in the clients’ names, a trust or an LLC?',
+    'Do they need to sell a current home first, and when?', 'Would they keep a mortgage for liquidity even if they could pay cash?',
+    'What is the closing date, and does a cash offer help win the deal?'],
+  test: 'My clients want to buy a $10 million house in Palm Beach. How should they fund it?'
+}];
+const LS_KEY = 'coach-expert-skills-v1';
+let CUSTOM = (() => {
+  try { const s = JSON.parse(localStorage.getItem(LS_KEY)); if (Array.isArray(s)) return s.filter(x => x && x.id && Array.isArray(x.checks)); } catch (e) {}
+  return JSON.parse(JSON.stringify(DEFAULT_CUSTOM));
+})();
+function saveCustom() { try { localStorage.setItem(LS_KEY, JSON.stringify(CUSTOM)); } catch (e) {} }
+PRESETS.push({id: 'lux', label: 'Buy a $10M home', q: DEFAULT_CUSTOM[0].test});
+
+function runExpertChecks(skill, P, sol) {
+  const rows = skill.checks.filter(c => METRICS[c.metric]).map(c => {
+    const m = METRICS[c.metric], v = m.calc(P, sol), t = m.unit === 'pct' ? c.thr / 100 : c.thr;
+    return {...c, m, v, pass: m.dir === 'max' ? v <= t : v >= t, val: valTxt(m, v), rule: ruleTxt(m, c.thr)};
+  });
+  const flagged = rows.filter(r => !r.pass).length, id = 'p:' + skill.id, agents = [...new Set(rows.map(r => r.m.agent))];
+  return {rows, flagged, step: {skill: skill.id + ' · expert checks', title: 'Ran the expert checks first', calls: rows.map(r => ({a: r.m.agent, fn: `${r.m.fn}("${HH.id}")`, out: `${r.m.short}: ${r.val}, ${r.rule} → ${r.pass ? 'OK' : 'flagged'}`})),
+    nodes: [id, ...agents.map(a => 'a:' + a)], edges: agents.map(a => [id, 'a:' + a]),
+    result: flagged ? `${flagged} of ${rows.length} checks flagged. ${skill.questions.length} questions go to the advisor.` : `All ${rows.length} checks passed.`}};
+}
+function skillDoc(c) {
+  const agents = [...new Set(c.checks.filter(k => METRICS[k.metric]).map(k => METRICS[k.metric].agent))];
+  return {
+    fm: [['name', c.id || 'new-skill'], ['parent', 'funding-liquidity'], ['extends', c.base], ['author', c.author || '(not set)'],
+         ['description', c.desc || '(not set)'], ['triggers', c.triggers.join(', ') || '(none yet)'], ...(c.minAmount ? [['when', `amount ≥ ${money(c.minAmount)}`]] : []),
+         ['agents', agents.map(agentName).join(', ')]],
+    secs: [
+      {h: 'Check first', ol: c.checks.filter(k => METRICS[k.metric]).map(k => { const m = METRICS[k.metric]; return `${agentName(m.agent)}: ${m.label}. ${ruleTxt(m, k.thr).replace(/^f/, 'F')}.${k.fail ? ` If flagged: ${k.fail}` : ''}`; })},
+      {h: 'Questions to raise with the client', ol: c.questions.filter(q => q && q.trim())},
+      {h: 'Then', p: `Run the ${c.base} steps and compare its options. Lead the answer with any flagged checks and the questions to ask.`}]
+  };
+}
+/* ---------- UI ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+const AG = Object.fromEntries(AGENTS.map(a => [a.id, a]));
+const BL = Object.fromEntries(BLOCKS.map(b => [b.id, b]));
+const PB = Object.fromEntries(PLAYBOOKS.map(p => [p.id, p]));
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const STEP_MS = 520;
+const state = {run: null, on: new Set(), edges: new Set(), stepOf: new Map(), calls: new Map(), sel: null, token: 0};
+const nodeEl = {};
+
+const allPB = () => [...CUSTOM, ...PLAYBOOKS];
+const findCustom = id => CUSTOM.find(c => c.id === id);
+const tiers = () => [
+  {id: 'f', label: 'Skill families', note: 'Super skills the coach can load', items: FAMILIES.map(f => ({id: 'f:' + f.id, name: f.name, sub: f.id, kind: f.super ? 'Super skill' : ''}))},
+  {id: 'p', label: 'Playbooks', note: 'One per client goal, inside the super skill', items: allPB().map(p => ({id: 'p:' + p.id, name: p.name, sub: p.id, kind: p.custom ? 'Expert skill' : ''}))},
+  {id: 'b', label: 'Building blocks', note: 'Shared steps any playbook can call', items: BLOCKS.map(b => ({id: 'b:' + b.id, name: b.name, sub: b.id}))},
+  {id: 'a', label: 'Agents', note: 'Our systems that hold the data and do the work', items: AGENTS.map(a => ({id: 'a:' + a.id, name: a.name, sub: a.short, mono: a.mono}))}
+];
+let STRUCT = [];
+function buildStruct() {
+  STRUCT = [];
+  allPB().forEach(p => {
+    STRUCT.push(['f:funding-liquidity', 'p:' + p.id]);
+    (p.custom ? PB[p.base] : p).uses.forEach(u => STRUCT.push(['p:' + p.id, 'b:' + u]));
+    if (p.custom) [...new Set(p.checks.filter(c => METRICS[c.metric]).map(c => METRICS[c.metric].agent))].forEach(a => STRUCT.push(['p:' + p.id, 'a:' + a]));
+  });
+  BLOCKS.forEach(b => b.agents.forEach(a => STRUCT.push(['b:' + b.id, 'a:' + a])));
+}
+
+function renderHH() {
+  const rows = [...HH.cash.map(c => [c.label, money(c.value)]), ['Taxable brokerage', money(TAXABLE)], ...HH.restricted.map(r => [r.label, money(r.value)]),
+                ['Gross income', money(HH.income) + '/yr'], ['Spending', money(HH.monthlySpend) + '/mo']];
+  $('#hh').innerHTML = `<p class="label">Sample household · ${HH.id}</p><p class="hh-name">${esc(HH.name)}</p>
+    <dl>${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>
+    <details><summary>Taxable lots and cost basis</summary><table class="lots"><tbody>${HH.lots.map(l => {
+      const g = l.value - l.basis;
+      return `<tr><td>${esc(l.label)}${l.term === 'short' ? ' (short-term)' : ''}</td><td>${money(l.value)}</td><td class="${g < 0 ? 'neg' : ''}">${g < 0 ? '' : '+'}${money(g)}</td></tr>`;
+    }).join('')}</tbody></table></details>
+    <p class="fine">Made-up household for this demo. ${money(SET_ASIDE)} is already set aside for the Jan 15 estimate.</p>`;
+}
+
+function renderMap() {
+  buildStruct(); for (const k in nodeEl) delete nodeEl[k];
+  $('#tiers').innerHTML = `<div class="scope" id="scope"><span>funding-liquidity/</span></div>` + tiers().map(t => `<div class="tier" data-tier="${t.id}">
+    <div class="tier-head"><p class="label">${t.label}</p><span>${t.note}</span></div>
+    <div class="tier-nodes">${t.items.map(n => `<button type="button" class="node${t.id === 'a' ? ' agent' : ''}" data-id="${n.id}">${n.mono ? `<span class="mono">${n.mono}</span>` : ''}${n.kind ? `<span class="kind">${n.kind}</span>` : ''}<span class="nm">${esc(n.name)}</span><span class="id">${esc(n.sub)}</span><span class="step" hidden></span></button>`).join('')}</div></div>`).join('');
+  document.querySelectorAll('.node').forEach(el => { nodeEl[el.dataset.id] = el; el.addEventListener('click', () => select(el.dataset.id, true)); });
+}
+
+function paintMap() {
+  const active = state.run && state.run.mode !== 'none' ? true : !!state.run;
+  for (const id in nodeEl) {
+    const el = nodeEl[id], on = state.on.has(id);
+    el.classList.toggle('on', on);
+    el.classList.toggle('dim', !on && active);
+    el.classList.toggle('sel', state.sel === id);
+    el.setAttribute('aria-pressed', state.sel === id ? 'true' : 'false');
+    const b = el.querySelector('.step'), n = state.stepOf.get(id), c = state.calls.get(id);
+    if (n) { b.hidden = false; b.textContent = n; } else if (c) { b.hidden = false; b.textContent = '×' + c; } else b.hidden = true;
+  }
+  $('#scope').classList.toggle('on', state.on.has('f:funding-liquidity'));
+  const count = p => [...state.on].filter(x => x.startsWith(p)).length;
+  $('#loaded').innerHTML = `Loaded <b>${count('f:')}</b>/${FAMILIES.length} families · <b>${count('p:')}</b>/${allPB().length} playbooks · <b>${count('b:')}</b>/${BLOCKS.length} blocks · <b>${count('a:')}</b>/${AGENTS.length} agents`;
+}
+
+function geom(a, b, mr, horiz) {
+  const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+  if (horiz) {
+    const x1 = ra.right - mr.left, y1 = ra.top + ra.height / 2 - mr.top, x2 = rb.left - mr.left, y2 = rb.top + rb.height / 2 - mr.top, c = (x2 - x1) / 2;
+    return `M${x1},${y1} C${x1 + c},${y1} ${x2 - c},${y2} ${x2},${y2}`;
+  }
+  const x1 = ra.left + ra.width / 2 - mr.left, y1 = ra.bottom - mr.top, x2 = rb.left + rb.width / 2 - mr.left, y2 = rb.top - mr.top, c = Math.max(14, (y2 - y1) / 2);
+  return `M${x1},${y1} C${x1},${y1 + c} ${x2},${y2 - c} ${x2},${y2}`;
+}
+function drawEdges(fresh = new Set()) {
+  const map = $('#map'), svg = $('#edges'), mr = map.getBoundingClientRect();
+  svg.setAttribute('width', map.offsetWidth); svg.setAttribute('height', map.offsetHeight);
+  const t = map.querySelectorAll('.tier'), horiz = t[1].getBoundingClientRect().left > t[0].getBoundingClientRect().right - 1;
+  const all = STRUCT.slice();
+  state.edges.forEach(k => { const [a, b] = k.split('|'); if (!all.some(e => e[0] === a && e[1] === b)) all.push([a, b]); });
+  all.sort((x, y) => state.edges.has(x.join('|')) - state.edges.has(y.join('|')));
+  svg.innerHTML = all.map(([a, b]) => {
+    const k = a + '|' + b, on = state.edges.has(k);
+    return `<path d="${geom(nodeEl[a], nodeEl[b], mr, horiz)}" class="${on ? 'on' : ''}${fresh.has(k) ? ' draw' : ''}"/>`;
+  }).join('');
+  svg.querySelectorAll('path.draw').forEach(p => {
+    const L = p.getTotalLength(); p.style.strokeDasharray = L; p.style.strokeDashoffset = L;
+    p.getBoundingClientRect(); p.style.transition = 'stroke-dashoffset .45s ease-out'; p.style.strokeDashoffset = 0;
+  });
+}
+
+function select(id, fromClick) {
+  state.sel = id; paintMap(); renderFile(id);
+  if (fromClick) {
+    const f = $('#file'), r = f.getBoundingClientRect();
+    if (r.top > innerHeight - 60 || r.bottom < 0) f.scrollIntoView({behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start'});
+  }
+}
+const fmBlock = rows => `<pre class="fm"><span class="d">---</span>\n${rows.map(([k, v]) => `<span class="k">${k}:</span> ${esc(v)}`).join('\n')}\n<span class="d">---</span></pre>`;
+const secsHtml = secs => `<div class="md">${secs.map(s => `<h3>${esc(s.h)}</h3>${s.ol ? `<ol>${s.ol.map(x => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}${s.ul ? `<ul>${s.ul.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}${s.p ? `<p>${esc(s.p)}</p>` : ''}`).join('')}</div>`;
+const callsHtml = calls => `<div class="calls">${calls.map(c => `<div class="call"><span class="ab">${AG[c.a].mono}</span><code>${esc(AG[c.a].name.split(' ')[0])}.${esc(c.fn)}</code><span class="out">${esc(c.out)}</span></div>`).join('')}</div>`;
+const inrun = (on, h, p) => `<div class="inrun${on ? '' : ' off'}"><h4>${esc(h)}</h4><p>${esc(p)}</p></div>`;
+
+function renderFile(id) {
+  const [t, key] = id.split(/:(.+)/), run = state.run, ran = state.on.has(id);
+  const where = run && run.skill ? `the ${run.skill.name} playbook` : 'no playbook';
+  let type, path, body;
+  if (t === 'f') {
+    const f = FAMILIES.find(x => x.id === key);
+    if (f.super) {
+      type = 'Super skill'; path = SUPER_FILE.path;
+      body = fmBlock(SUPER_FILE.fm) + secsHtml(SUPER_FILE.secs) + (ran ? inrun(true, 'Loaded for this question', !state.done ? 'The router matched it. It is choosing a playbook now.' : `The router matched it, and it sent the question to ${run.pb ? where : 'check-liquidity on its own'}.`) : inrun(false, 'Not loaded', 'Nothing in the question pointed to this skill.'));
+    } else {
+      type = 'Skill family'; path = `skills/${f.id}/SKILL.md`;
+      body = fmBlock([['name', f.id], ['type', 'super skill'], ['contains', f.inside]]) + inrun(false, 'Not loaded for this question', 'The router only opens a skill family when the question matches its triggers, so none of its files were read.');
+    }
+  } else if (t === 'p' && findCustom(key)) {
+    const c = findCustom(key), d = skillDoc(c); type = 'Expert skill'; path = `skills/funding-liquidity/playbooks/${c.id}/SKILL.md`;
+    body = fmBlock(d.fm) + secsHtml(d.secs) + `<button type="button" class="add edit-skill" data-edit="${esc(c.id)}">Edit in the skill builder</button>`
+      + (ran ? inrun(true, `In this run · step ${state.stepOf.get(id)}`, !state.done ? 'Loaded. Running its expert checks now.' : `Flagged ${run.expert.flagged} of ${run.expert.rows.length} checks and raised ${c.questions.length} questions for the advisor.`)
+             : inrun(false, 'Not loaded', `This question went to ${where}.${c.minAmount ? ` This skill needs an amount of at least ${money(c.minAmount)}.` : ''}`));
+  } else if (t === 'p') {
+    const p = PB[key]; type = 'Playbook'; path = `skills/funding-liquidity/playbooks/${p.id}/SKILL.md`;
+    body = fmBlock([['name', p.id], ['parent', 'funding-liquidity'], ...p.fm, ['uses', p.uses.join(', ')]]) + secsHtml(p.secs)
+      + (ran ? inrun(true, `In this run · step ${state.stepOf.get(id)}`, !state.done ? `Loaded. Running its ${p.uses.length} building blocks now.` : run.sol.rec ? `Ran ${p.uses.length} building blocks and recommended option ${run.sol.rec.key}: ${run.sol.rec.name}.` : `Ran ${p.uses.length} building blocks; no option was possible.`)
+             : inrun(false, 'Not loaded', `This question went to ${where}.`));
+  } else if (t === 'b') {
+    const b = BL[key], step = run && run.steps.find(s => s.block === key);
+    type = 'Building block'; path = `skills/funding-liquidity/blocks/${b.id}/SKILL.md`;
+    body = fmBlock([['name', b.id], ['type', 'building block'], ['description', b.desc], ['agents', b.agents.map(a => AG[a].name).join(', ')]]) + secsHtml(b.secs)
+      + (step ? `<div class="inrun"><h4>In this run · step ${state.stepOf.get(id)}</h4>${callsHtml(step.calls)}<p>${esc(step.result)}</p></div>`
+              : inrun(false, 'Not used in this run', run && run.skill ? `The ${run.skill.name} playbook doesn't list it, so it was never loaded.` : 'No playbook ran.'));
+  } else {
+    const a = AG[key], calls = run ? run.steps.flatMap(s => s.calls.filter(c => c.a === key)) : [];
+    type = 'Agent'; path = `agents/${a.id}`;
+    body = `<p class="agent-does">${esc(a.does)}</p><div class="md"><h3>Tools</h3><ul>${a.tools.map(x => `<li><code>${esc(x)}</code></li>`).join('')}</ul><p>Skills decide when to call these and what to do with the answer. The agent owns the data and the action.</p></div>`
+      + (calls.length ? `<div class="inrun"><h4>Called ${calls.length} time${calls.length > 1 ? 's' : ''} in this run</h4>${callsHtml(calls)}</div>` : inrun(false, 'Not called in this run', 'No building block in this run needed it.'));
+  }
+  $('#file').innerHTML = `<div class="file-top"><span class="ftype">${type}</span><code class="path">${esc(path)}</code></div><div class="file-body">${body}</div>`;
+  const eb = $('#file .edit-skill'); if (eb) eb.addEventListener('click', () => openBuilder(eb.dataset.edit, true));
+}
+
+const tag = (k, v) => `<span class="tag"><i>${k}</i><b>${esc(v)}</b></span>`;
+function renderParsed(r) {
+  const P = r.P, t = [];
+  t.push(tag('Skill', r.mode === 'none' ? 'none matched' : 'Funding & Liquidity'));
+  if (r.skill) t.push(tag(r.expert ? 'Expert skill' : 'Playbook', r.skill.name)); else if (r.mode === 'liquidity') t.push(tag('Playbook', 'none, liquidity check only'));
+  if (r.pb) t.push(tag(r.pb.unit === 'price' ? 'Price' : 'Amount', P.amountStated ? money(P.amount) : `${money(P.amount)} example, not in the question`));
+  if (r.pb && (r.pb.id === 'raise-cash' || r.pb.id === 'pay-a-tax-bill')) t.push(tag(r.pb.id === 'raise-cash' ? 'Needed for' : 'Repay over', P.monthsStated ? `${P.months} month${P.months > 1 ? 's' : ''}` : 'not stated, so 12 months'));
+  if (P.hits.length) t.push(tag('Matched', P.hits.map(h => '“' + h + '”').join(' ')));
+  $('#parsed').innerHTML = t.join('');
+}
+
+function whyBullets(run) {
+  const {P, pb, sol} = run, r = sol.rec, out = [], next = sol.ranked.find(o => o !== r);
+  if (!r.fails.length && next) out.push(`Lowest tax plus interest (${sol.period}) of the options that pass every guardrail: ${money(r.cost)}, against ${money(next.cost)} for option ${next.key}.`);
+  const B = sol.opts.find(o => o.key === 'B');
+  if (pb.id === 'raise-cash' && r.key === 'A' && r.line && B && B.sale) out.push(`The money is needed for about ${P.months} months, so ${money(r.line.interest)} of interest costs less than the ${money(B.sale.tax)} tax from selling.`);
+  if (pb.id === 'raise-cash' && r.key === 'B' && !P.monthsStated) out.push('The question gives no end date, so the playbook treats the need as permanent and compares a full year of line interest.');
+  if (pb.id === 'buy-a-boat' && r.key === 'C') {
+    const fin = sol.opts.filter(o => o.key !== 'C' && o.feasible).map(o => o.interest);
+    if (fin.length) out.push(`Financing would cost at least ${money(Math.min(...fin))} a year in interest on an asset that loses value. Selling costs ${money(r.tax)} once.`);
+  }
+  if (pb.id === 'pay-a-tax-bill' && r.key !== 'C') { const C = sol.opts.find(o => o.irs); if (C) out.push(`An IRS payment plan would cost about ${money(C.irs.cost)} in interest and penalties, and the playbook never accepts IRS penalties.`); }
+  if (r.sale) {
+    const loss = r.sale.parts.find(p => p.gain < 0);
+    if (loss && r.sale.tax > 0) out.push(`The sale starts with the ${loss.lot.label.toLowerCase()}, sold at a ${money(-loss.gain)} loss, which keeps the tax on ${money(r.sale.amount)} to about ${money(r.sale.tax)}.`);
+    else if (loss) out.push(`The ${money(r.sale.amount)} sale comes from the ${loss.lot.label.toLowerCase()} at a loss, so it creates no tax and ${money(r.sale.carry)} of losses carry forward.`);
+    else out.push(`The ${money(r.sale.amount)} sale creates about ${money(r.sale.tax)} in tax.`);
+  }
+  if (r.loan) out.push(r.loan.kind === 'Jumbo mortgage'
+    ? `The ${money(r.loan.amt)} mortgage at a placeholder ${rate(r.loan.rate)} is ${dollars(r.loan.monthly)} a month. Housing cost is ${pct(r.housing)} of gross income, ${r.housing <= LIMITS.housing ? 'under' : 'over'} the 28% guideline.`
+    : `The ${money(r.loan.amt)} marine loan at a placeholder ${rate(r.loan.rate)} is ${dollars(r.loan.monthly)} a month, ${pct(r.debt)} of gross income.`);
+  if (r.line) out.push(`The ${money(r.line.amt)} draw uses ${pct(r.line.util, 0)} of the ${money(CAPACITY)} borrowing capacity. Markets would have to fall about ${pct(r.line.drop, 0)} before a margin call.`);
+  out.push(`${r.cashUse > 0 ? `${money(r.cashUse)} comes from cash. ` : 'No cash is spent. '}The ${money(RESERVE)} emergency reserve and the ${money(SET_ASIDE)} set aside for January 15 stay put.`);
+  const ruled = sol.opts.filter(o => o !== r && (!o.feasible || o.fails.length)).map(o => !o.feasible ? `Option ${o.key} is not possible: ${o.blocker}.` : `Option ${o.key} is out because ${o.fails.map(f => f.why).join(' and ')}.`);
+  return out.concat(ruled);
+}
+function optsHtml(sol) {
+  return `<div class="opts">${sol.opts.map(o => {
+    const isRec = o === sol.rec;
+    return `<div class="opt${isRec ? ' is-rec' : ''}${o.feasible ? '' : ' is-out'}"><span class="key">${o.key}</span>
+      <div><div class="nm">${esc(o.name)}${isRec ? '<span class="pill sm">Pick</span>' : ''}</div><div class="bl">${esc(o.blurb)}</div></div>
+      <div class="cost">${o.feasible ? money(o.cost) : '—'}<small>tax + interest</small></div>
+      <div class="meta">${o.feasible ? `<span>Tax now <b>${money(o.tax)}</b></span><span>${o.irs ? 'IRS interest + penalty' : 'Interest'} <b>${money(o.interest)}</b></span><span>New debt <b>${money(o.newDebt)}</b></span><span>Ready <b>${esc(o.ready)}</b></span>` : `<span class="out-t">Not possible: ${esc(o.blocker)}</span>`}</div>
+      ${o.feasible ? `<div class="checks">${o.checks.map(c => `<span class="ck ${c.pass ? 'pass' : 'fail'}">${c.pass ? '✓' : '✕'} ${esc(c.label)}</span>`).join('')}</div>` : ''}</div>`;
+  }).join('')}</div>`;
+}
+const footNote = '<p class="foot-note">Rates marked * are placeholders. Sample household. Not tax, legal or lending advice.</p>';
+function renderAnswer(run) {
+  const el = $('#answer');
+  if (run.mode === 'none') {
+    el.innerHTML = `<p class="headline">No skill matched this question.</p><p class="note">Try one of the examples, or say what the client wants to pay for: a home, a boat, a tax bill or a cash need.</p>`;
+    return;
+  }
+  if (run.mode === 'liquidity') {
+    const rows = [['Available now (T+0)', AVAIL, `Checking, savings and money market, minus the ${money(RESERVE)} reserve and ${money(SET_ASIDE)} set aside`],
+      ['Next business day (T+1)', TAXABLE, `Listed securities. Selling realizes tax on part of ${money(GAIN)} of gains`],
+      ['3–5 days', CAPACITY, 'Pledged line against the taxable portfolio'],
+      ['Restricted', RESTRICTED, HH.restricted.map(r => `${r.label}: ${r.why}`).join('; ')]];
+    el.innerHTML = `<p class="headline">${money(AVAIL)} is available today. Here is how fast the rest could be ready.</p>
+      <table class="tiers-tbl"><tbody>${rows.map(([t, v, s]) => `<tr><td><span class="t">${t}</span><span class="s">${esc(s)}</span></td><td>${money(v)}</td></tr>`).join('')}</tbody></table>
+      <p class="note">No playbook matched, so the coach stopped after check-liquidity. Saying what the money is for (a home, a boat, a tax bill, a capital call) gets a recommendation.</p>${footNote}`;
+    return;
+  }
+  const {P, pb, sol} = run, r = sol.rec;
+  let h = P.amountStated ? '' : `<p class="note">The question gives no ${pb.unit}, so this run uses a ${money(P.amount)} example. In production the coach would ask the advisor first.</p>`;
+  const e = run.expert;
+  const expertHtml = !e ? '' : `<div class="blk"><p class="label">Expert checks · ${esc(run.skill.name)}</p><div class="xchecks">${e.rows.map(x => `<div class="xc"><span class="ab">${AG[x.m.agent].mono}</span><div><div class="xl">${esc(x.m.label)}</div><div class="xs">${esc(x.val)}, ${esc(x.rule)}.${!x.pass && x.fail ? ` ${esc(x.fail)}` : ''}</div></div><span class="ck ${x.pass ? 'pass' : 'fail'}">${x.pass ? '✓ OK' : '✕ Flagged'}</span></div>`).join('')}</div></div>`
+    + (run.skill.questions.length ? `<div class="blk"><p class="label">Questions to raise with the client first</p><ol class="why">${run.skill.questions.map(q => `<li>${esc(q)}</li>`).join('')}</ol></div>` : '');
+  const expertFlag = e && e.flagged ? `<p class="flag">The ${esc(run.skill.name)} skill flagged ${e.flagged} of ${e.rows.length} checks. Cover these with the client before settling on a funding plan.</p>` : '';
+  if (!r) { el.innerHTML = h + expertFlag + expertHtml + `<p class="headline">This is more than the household can fund without touching retirement or private funds.</p><div class="blk"><p class="label">Options the playbook tried</p>${optsHtml(sol)}</div>` + footNote; return; }
+  const debtSub = r.loan ? `${dollars(r.loan.monthly)}/mo` : r.line ? `${rate(r.line.rate)}* variable` : 'none';
+  const figs = [['Needed', money(r.due), r.dueNote], ['Tax now', money(r.tax), r.sale ? `on a ${money(r.sale.amount)} sale` : 'nothing sold'], ['New debt', money(r.newDebt), debtSub], ['Tax + interest', money(r.cost), sol.period]];
+  h += `<div class="rec-line"><span class="pill">Recommended · option ${r.key}</span><span class="rec-name">${esc(r.name)}</span></div>
+    <p class="headline">${esc(r.headline)}</p>
+    <div class="figs">${figs.map(([k, v, s]) => `<div class="fig"><span class="k">${k}</span><span class="v">${v}</span><span class="s">${esc(s)}</span></div>`).join('')}</div>`;
+  h += expertFlag + expertHtml;
+  if (r.fails.length) h += `<p class="flag">No option passes every guardrail. This one breaks ${r.fails.length}: ${esc(r.fails.map(f => f.why).join('; '))}. The coach flags it for a planning conversation before anything moves.</p>`;
+  h += `<div class="blk"><p class="label">Why this option</p><ul class="why">${whyBullets(run).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
+    <div class="blk"><p class="label">Options the playbook compared</p>${optsHtml(sol)}</div>${footNote}`;
+  el.innerHTML = h;
+}
+
+const stepHtml = (s, i, anim) => `<li${anim ? ' class="enter"' : ''}><span class="n">${i + 1}</span><div class="st"><div class="sk">${esc(s.skill)}</div><div class="t">${esc(s.title)}</div>${s.calls.length ? callsHtml(s.calls) : ''}${s.lines ? `<ul class="lines">${s.lines.map(l => `<li>${esc(l)}</li>`).join('')}</ul>` : ''}<p class="res">${esc(s.result)}</p></div></li>`;
+function working(i, n, s) {
+  $('#answer').innerHTML = `<div class="working"><div class="bar"><i style="width:${Math.round(i / n * 100)}%"></i></div><p>Running step ${i} of ${n}${s ? ` · <code>${esc(s.skill)}</code>` : ''}</p></div>`;
+}
+function run(q, animate = true) {
+  const tok = ++state.token, r = buildRun(q);
+  Object.assign(state, {run: r, on: new Set(), edges: new Set(), stepOf: new Map(), calls: new Map(), sel: null, done: false});
+  renderParsed(r); $('#trace').innerHTML = '';
+  const apply = (s, i, anim) => {
+    s.nodes.forEach(n => { state.on.add(n); if (!n.startsWith('a:') && !state.stepOf.has(n)) state.stepOf.set(n, i + 1); });
+    s.calls.forEach(c => state.calls.set('a:' + c.a, (state.calls.get('a:' + c.a) || 0) + 1));
+    const fresh = new Set();
+    s.edges.forEach(e => { const k = e.join('|'); if (!state.edges.has(k)) { state.edges.add(k); fresh.add(k); } });
+    $('#trace').insertAdjacentHTML('beforeend', stepHtml(s, i, anim));
+    paintMap(); drawEdges(anim ? fresh : new Set());
+    if (anim) s.nodes.forEach(n => { const el = nodeEl[n]; if (el) { el.classList.remove('now'); void el.offsetWidth; el.classList.add('now'); } });
+    if (anim && i < 2 && s.nodes.length) { state.sel = s.nodes[0]; paintMap(); renderFile(s.nodes[0]); }
+  };
+  const finish = () => {
+    state.done = true;
+    renderAnswer(r);
+    const sel = r.skill ? 'p:' + r.skill.id : r.mode === 'liquidity' ? 'b:check-liquidity' : 'f:funding-liquidity';
+    state.sel = sel; paintMap(); renderFile(sel);
+  };
+  if (!animate || reduceMotion.matches) { r.steps.forEach((s, i) => apply(s, i, false)); finish(); return; }
+  paintMap(); drawEdges();
+  let i = 0;
+  const tick = () => {
+    if (tok !== state.token) return;
+    if (i < r.steps.length) { apply(r.steps[i], i, true); working(i + 1, r.steps.length, r.steps[i]); i++; setTimeout(tick, STEP_MS); }
+    else finish();
+  };
+  working(0, r.steps.length, null); tick();
+}
+
+/* ---------- Boot ---------- */
+function setPressed(id) { document.querySelectorAll('.chip').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === id ? 'true' : 'false')); }
+renderHH(); renderMap();
+$('#presets').innerHTML = PRESETS.map(p => `<button type="button" class="chip" data-p="${p.id}" aria-pressed="false">${esc(p.label)}</button>`).join('');
+document.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => { const p = PRESETS.find(x => x.id === b.dataset.p); $('#q').value = p.q; setPressed(p.id); run(p.q); }));
+$('#ask-form').addEventListener('submit', e => { e.preventDefault(); run($('#q').value); });
+$('#q').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); run($('#q').value); } });
+$('#q').addEventListener('input', () => setPressed(null));
+if (/Mac|iPhone|iPad/.test(navigator.platform || '')) $('#kbd').textContent = '⌘ ↵';
+$('#q').value = PRESETS[0].q; setPressed('home');
+run(PRESETS[0].q, false);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => drawEdges());
+if ('ResizeObserver' in window) new ResizeObserver(() => drawEdges()).observe($('#map'));
+/* ---------- Skill builder ---------- */
+let draft = null, editingId = null, delArmed = false;
+const blankSkill = () => ({custom: true, id: '', name: '', author: '', base: 'buy-a-home', desc: '', triggers: [], minAmount: null, minText: '',
+  checks: [{metric: 'concentration', thr: METRICS.concentration.def, fail: ''}], questions: [''], test: ''});
+const slug = s => s.toLowerCase().replace(/\$/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48);
+function parseMoney(s) {
+  const t = String(s || '').toLowerCase().replace(/[$,\s]/g, ''); if (!t) return null;
+  const m = t.match(/^(\d+(?:\.\d+)?)(k|thousand|m|mm|million)?$/); if (!m) return NaN;
+  return parseFloat(m[1]) * (/^(k|thousand)$/.test(m[2] || '') ? 1e3 : /^(m|mm|million)$/.test(m[2] || '') ? 1e6 : 1);
+}
+const val = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+
+function openBuilder(id, scroll) {
+  const src = findCustom(id);
+  editingId = src ? id : null; delArmed = false;
+  draft = JSON.parse(JSON.stringify(src || blankSkill()));
+  draft.minText = draft.minAmount ? money(draft.minAmount) : '';
+  if (!draft.questions.length) draft.questions = [''];
+  renderBuilder('');
+  if (scroll) $('#builder').scrollIntoView({behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start'});
+}
+function renderList() {
+  $('#b-list').innerHTML = CUSTOM.map(c => `<button type="button" class="chip" data-edit="${esc(c.id)}" aria-pressed="${c.id === editingId}">${esc(c.name)}</button>`).join('')
+    + `<button type="button" class="chip" data-new="1" aria-pressed="${!editingId}">+ New skill</button>`;
+  $('#b-list').querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openBuilder(b.dataset.edit)));
+  $('#b-list').querySelector('[data-new]').addEventListener('click', () => openBuilder(null));
+}
+const metricOptions = sel => AGENTS.map(a => {
+  const ms = Object.entries(METRICS).filter(([, m]) => m.agent === a.id);
+  return ms.length ? `<optgroup label="${esc(a.name)}">${ms.map(([k, m]) => `<option value="${k}"${k === sel ? ' selected' : ''}>${esc(m.short)}</option>`).join('')}</optgroup>` : '';
+}).join('');
+const unitWord = m => m.unit === 'pct' ? '%' : m.unit === 'months' ? 'months' : 'dollars';
+
+function renderBuilder(msg, kind) {
+  renderList();
+  const d = draft;
+  $('#b-form').innerHTML = `
+    <div class="f-row">
+      <label class="fld"><span>Skill name</span><input id="b-name" value="${esc(d.name)}" placeholder="Buy a home over $5M"></label>
+      <label class="fld"><span>Written by</span><input id="b-author" value="${esc(d.author)}" placeholder="Your name or team"></label>
+    </div>
+    <div class="f-row">
+      <label class="fld"><span>Builds on playbook</span><select id="b-base">${PLAYBOOKS.map(p => `<option value="${p.id}"${p.id === d.base ? ' selected' : ''}>${esc(p.name)}</option>`).join('')}</select></label>
+      <label class="fld"><span>Only when the amount is at least</span><input id="b-min" value="${esc(d.minText)}" placeholder="Optional, e.g. $5M" inputmode="decimal"></label>
+    </div>
+    <label class="fld"><span>Use when</span><textarea id="b-desc" rows="2" placeholder="Use when an advisor asks…">${esc(d.desc)}</textarea></label>
+    <label class="fld"><span>Trigger words, separated by commas</span><input id="b-trig" value="${esc(d.triggers.join(', '))}" placeholder="house, home, estate"></label>
+    <fieldset class="fs"><legend>Check first</legend>
+      <p class="fs-note">Each check asks one agent for one number about the client and flags it past your limit.</p>
+      ${d.checks.map((c, i) => { const m = METRICS[c.metric]; return `<div class="ck-row">
+        <select id="b-ck-${i}-m" aria-label="Check ${i + 1}: what to look at">${metricOptions(c.metric)}</select>
+        <label class="thr"><span>flag if ${m.dir === 'max' ? 'over' : 'under'}</span><input id="b-ck-${i}-t" type="number" step="any" value="${isFinite(c.thr) ? c.thr : ''}" aria-label="Limit for check ${i + 1}"><em>${unitWord(m)}</em></label>
+        <input class="fl" id="b-ck-${i}-f" value="${esc(c.fail || '')}" placeholder="If flagged, the coach should…" aria-label="What to do if check ${i + 1} is flagged">
+        <button type="button" class="x" data-rm-ck="${i}" aria-label="Remove check ${i + 1}">×</button></div>`; }).join('')}
+      <button type="button" class="add" data-add="ck">+ Add a check</button>
+    </fieldset>
+    <fieldset class="fs"><legend>Questions to raise with the client</legend>
+      ${d.questions.map((q, i) => `<div class="q-row"><span class="qn">${i + 1}</span><input id="b-q-${i}" value="${esc(q)}" placeholder="Is this a primary home or a second home?" aria-label="Question ${i + 1}"><button type="button" class="x" data-rm-q="${i}" aria-label="Remove question ${i + 1}">×</button></div>`).join('')}
+      <button type="button" class="add" data-add="q">+ Add a question</button>
+    </fieldset>
+    <label class="fld"><span>Test question</span><input id="b-test" value="${esc(d.test || '')}" placeholder="My clients want to buy a $10 million house. How should they fund it?"></label>
+    <div class="b-actions"><button type="submit" class="run">Save and test</button>${editingId ? `<button type="button" class="danger" id="b-del">${delArmed ? 'Select again to delete' : 'Delete skill'}</button>` : ''}<p class="b-msg${kind ? ' ' + kind : ''}" id="b-msg" role="status">${esc(msg || '')}</p></div>`;
+  renderPreview();
+}
+function readForm() {
+  const d = draft;
+  d.name = val('b-name'); d.author = val('b-author'); d.base = val('b-base'); d.desc = val('b-desc');
+  d.triggers = val('b-trig').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  d.minText = val('b-min'); d.minAmount = parseMoney(d.minText);
+  d.checks.forEach((c, i) => { c.metric = val(`b-ck-${i}-m`) || c.metric; c.thr = parseFloat(val(`b-ck-${i}-t`)); c.fail = val(`b-ck-${i}-f`); });
+  d.questions = d.questions.map((q, i) => val(`b-q-${i}`));
+  d.test = val('b-test');
+}
+function renderPreview() {
+  const d = {...draft, id: slug(draft.name), minAmount: isFinite(draft.minAmount) ? draft.minAmount : null}, doc = skillDoc(d);
+  $('#b-path').textContent = `skills/funding-liquidity/playbooks/${d.id || 'new-skill'}/SKILL.md`;
+  $('#b-prev').innerHTML = fmBlock(doc.fm) + secsHtml(doc.secs);
+}
+
+function saveDraft() {
+  readForm();
+  const d = draft, id = slug(d.name), errs = [];
+  if (!d.name.trim()) errs.push('Give the skill a name.');
+  if (!d.triggers.length) errs.push('Add at least one trigger word so the router can find it.');
+  if (Number.isNaN(d.minAmount)) errs.push('Write the amount like 5000000 or $5M.');
+  if (!d.checks.length) errs.push('Add at least one check.');
+  if (d.checks.some(c => !isFinite(c.thr))) errs.push('Give every check a limit.');
+  if (id && (PLAYBOOKS.some(p => p.id === id) || CUSTOM.some(c => c.id === id && c.id !== editingId))) errs.push('Another skill already has that name.');
+  if (errs.length) { renderBuilder(errs.join(' '), 'err'); return; }
+  const saved = {custom: true, id, name: d.name.trim(), author: d.author.trim(), base: d.base, desc: d.desc.trim(), triggers: d.triggers,
+    minAmount: d.minAmount || null, checks: d.checks.map(c => ({metric: c.metric, thr: c.thr, fail: c.fail.trim()})),
+    questions: d.questions.map(q => q.trim()).filter(Boolean), test: d.test.trim()};
+  const i = CUSTOM.findIndex(c => c.id === editingId);
+  if (i > -1) CUSTOM[i] = saved; else CUSTOM.unshift(saved);
+  editingId = id; saveCustom(); renderMap();
+  draft = JSON.parse(JSON.stringify(saved)); draft.minText = saved.minAmount ? money(saved.minAmount) : ''; if (!draft.questions.length) draft.questions = [''];
+  const q = saved.test || `My clients want to buy a ${saved.minAmount ? money(saved.minAmount * 2) : '$3M'} ${saved.triggers[0]}. How should they fund it?`;
+  const routed = parseQuestion(q).pb;
+  renderBuilder(routed && routed.id === id ? 'Saved. The coach is running your test question above.' : `Saved, but the test question went to ${routed ? routed.name : 'no skill'}. Check the trigger words and the amount threshold.`, routed && routed.id === id ? 'ok' : 'err');
+  $('#q').value = q; setPressed(null); run(q);
+  document.querySelector('.map-card').scrollIntoView({behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start'});
+}
+
+$('#b-form').addEventListener('submit', e => { e.preventDefault(); saveDraft(); });
+$('#b-form').addEventListener('input', e => { readForm(); renderPreview(); if (delArmed) { delArmed = false; const b = $('#b-del'); if (b) b.textContent = 'Delete skill'; } });
+$('#b-form').addEventListener('change', e => {
+  const m = e.target.id.match(/^b-ck-(\d+)-m$/);
+  if (m) { readForm(); draft.checks[+m[1]].thr = METRICS[e.target.value].def; renderBuilder(''); const el = document.getElementById(e.target.id); if (el) el.focus(); }
+});
+$('#b-form').addEventListener('click', e => {
+  const t = e.target.closest('button'); if (!t) return;
+  if (t.dataset.add || t.dataset.rmCk || t.dataset.rmQ) readForm();
+  if (t.dataset.add === 'ck') { draft.checks.push({metric: 'cashMonths', thr: METRICS.cashMonths.def, fail: ''}); renderBuilder(''); document.getElementById(`b-ck-${draft.checks.length - 1}-m`).focus(); }
+  else if (t.dataset.add === 'q') { draft.questions.push(''); renderBuilder(''); document.getElementById(`b-q-${draft.questions.length - 1}`).focus(); }
+  else if (t.dataset.rmCk) { draft.checks.splice(+t.dataset.rmCk, 1); renderBuilder(''); }
+  else if (t.dataset.rmQ) { draft.questions.splice(+t.dataset.rmQ, 1); if (!draft.questions.length) draft.questions = ['']; renderBuilder(''); }
+  else if (t.id === 'b-del') {
+    if (!delArmed) { delArmed = true; t.textContent = 'Select again to delete'; return; }
+    const name = draft.name; CUSTOM = CUSTOM.filter(c => c.id !== editingId); saveCustom(); renderMap();
+    openBuilder(null); renderBuilder(`Deleted ${name}.`, 'ok'); run($('#q').value, false);
+  }
+});
+$('#to-builder').addEventListener('click', () => openBuilder(CUSTOM[0] ? CUSTOM[0].id : null, true));
+openBuilder(CUSTOM[0] ? CUSTOM[0].id : null);
+</script>
