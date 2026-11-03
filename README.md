@@ -14,23 +14,9 @@ The page also includes a **skill builder**. An expert sets when a skill applies,
 
 ## Run it
 
-Open `index.html` in a browser. It is a single self-contained file.
+Everything lives in one file, `index.html`: markup, styles, data, logic and the skill builder. Open it in a browser; there is nothing to install or build.
 
-## Edit it
-
-The page is built from the files in `src/`:
-
-| File | What it holds |
-| --- | --- |
-| `head.html` | Title, fonts and all CSS |
-| `body.html` | Page markup |
-| `data.js` | Sample household, rates, agents, super skill, playbooks, building blocks, example questions |
-| `engine.js` | Router, option builders, guardrails, ranking and the run trace |
-| `custom.js` | Expert-skill checks (metrics), the example $5M+ home skill, saving to the browser |
-| `ui.js` | Skill map, skill file panel, answer and run log |
-| `builder.js` | Skill builder form and preview |
-
-After editing, run `./build.sh` to regenerate `index.html`.
+To change the sample household, rates, playbooks or agents, edit the data near the top of the `<script>` section in `index.html`.
 
 ## Caveats
 
